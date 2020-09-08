@@ -22,7 +22,7 @@ import { DatatableFooterDirective } from './footer.directive';
       </ng-template>
       <div class="page-count" *ngIf="!footerTemplate">
         <span *ngIf="selectedMessage"> {{ selectedCount?.toLocaleString() }} {{ selectedMessage }} / </span>
-        {{ rowCount?.toLocaleString() }} {{ totalMessage }}
+        {{ totalMessage }} {{ rowCount?.toLocaleString() }}
       </div>
       <datatable-pager
         *ngIf="!footerTemplate"

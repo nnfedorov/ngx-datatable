@@ -827,7 +827,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     if (!columns) return undefined;
 
     let width = this._innerWidth;
-    if (this.scrollbarV) {
+    if (this.scrollbarV && this.hasScrollbarV) {
       width = width - this.scrollbarHelper.width;
     }
 
@@ -838,6 +838,12 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     }
 
     return columns;
+  }
+
+  private get hasScrollbarV(): boolean {
+    // return this.element.scrollHeight > this.element.clientHeight;
+    // return this.element.clientWidth + 5 < this.element.offsetWidth;
+    return this.rowCount * <number>this.rowHeight > this.bodyHeight;
   }
 
   /**

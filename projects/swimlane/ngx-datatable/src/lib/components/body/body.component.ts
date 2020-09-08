@@ -15,6 +15,10 @@ import { SelectionType } from '../../types/selection.type';
 import { columnsByPin, columnGroupWidths } from '../../utils/column';
 import { RowHeightCache } from '../../utils/row-height-cache';
 import { translateXY } from '../../utils/translate';
+import { isFF, isMS } from '../../utils/facade/browser';
+
+const FF_MAX_HEIGHT = 8947840;
+const MS_MAX_HEIGHT = 10737418;
 
 @Component({
   selector: 'datatable-body',
@@ -239,7 +243,15 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
    */
   get scrollHeight(): number | undefined {
     if (this.scrollbarV && this.virtualization && this.rowCount) {
-      return this.rowHeightsCache.query(this.rowCount - 1);
+      let height = this.rowHeightsCache.query(this.rowCount - 1);
+      if (height > FF_MAX_HEIGHT) {
+        if (isFF) {
+          height = FF_MAX_HEIGHT;
+        } else if (height > MS_MAX_HEIGHT && isMS) {
+          height = MS_MAX_HEIGHT;
+        }
+      }
+      return height;
     }
     // avoid TS7030: Not all code paths return a value.
     return undefined;
@@ -386,6 +398,10 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     if (direction !== undefined && !isNaN(offset)) {
       this.page.emit({ offset });
     }
+  }
+
+  public detectChanges(): void {
+    this.cd.detectChanges();
   }
 
   /**
