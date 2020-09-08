@@ -41,6 +41,10 @@ export class DataTableSelectionComponent {
     if (multi || chkbox || multiClick) {
       if (event.shiftKey) {
         selected = selectRowsBetween([], this.rows, index, this.prevIndex, this.getRowSelectedIdx.bind(this));
+        if (selected.some(r => !r)) {
+          // if some rows are not loaded - fallback to the single selection mode
+          selected = selectRows([], row, this.getRowSelectedIdx.bind(this));
+        }
       } else if (event.ctrlKey || event.metaKey || multiClick || chkbox) {
         selected = selectRows([...this.selected], row, this.getRowSelectedIdx.bind(this));
       } else {
