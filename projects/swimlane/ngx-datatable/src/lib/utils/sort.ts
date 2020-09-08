@@ -13,6 +13,7 @@ export function nextSortDir(sortType: SortType, current: SortDirection): SortDir
       return SortDirection.asc;
     }
   } else {
+    // SortType.multi or SortType.singleResettable
     if (!current) {
       return SortDirection.asc;
     } else if (current === SortDirection.asc) {

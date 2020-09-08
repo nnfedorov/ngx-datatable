@@ -1,4 +1,5 @@
 export enum SortType {
   single = 'single',
-  multi = 'multi'
+  multi = 'multi',
+  singleResettable = 'singleResettable' // #18318
 }

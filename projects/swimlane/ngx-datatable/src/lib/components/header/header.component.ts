@@ -297,7 +297,7 @@ export class DataTableHeaderComponent implements OnDestroy {
     } else if (prevValue) {
       sorts[idx].dir = newValue;
     } else {
-      if (this.sortType === SortType.single) {
+      if (this.sortType === SortType.single || this.sortType === SortType.singleResettable) {
         sorts.splice(0, this.sorts.length);
       }
 
