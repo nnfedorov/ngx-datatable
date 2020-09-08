@@ -262,13 +262,13 @@ export class DataTableHeaderComponent implements OnDestroy {
     return this._columnsByPin[2].columns[index - leftColumnCount - centerColumnCount];
   }
 
-  onSort({ column, prevValue, newValue }: any): void {
+  onSort({ column, prevValue, newValue, event }: any): void {
     // if we are dragging don't sort!
     if (column.dragging) {
       return;
     }
 
-    const sorts = this.calcNewSorts(column, prevValue, newValue);
+    const sorts = this.calcNewSorts(column, prevValue, newValue, event);
     this.sort.emit({
       sorts,
       column,
@@ -277,7 +277,7 @@ export class DataTableHeaderComponent implements OnDestroy {
     });
   }
 
-  calcNewSorts(column: any, prevValue: number, newValue: number): any[] {
+  calcNewSorts(column: any, prevValue: number, newValue: number, event: MouseEvent): any[] {
     let idx = 0;
 
     if (!this.sorts) {
@@ -292,12 +292,14 @@ export class DataTableHeaderComponent implements OnDestroy {
       return s;
     });
 
+    const multiToSkipType = this.sortType === SortType.multi && event && !event.ctrlKey; // "multi" mode without Ctrl
+    // should work as "single" one
     if (newValue === undefined) {
       sorts.splice(idx, 1);
-    } else if (prevValue) {
+    } else if (prevValue && !multiToSkipType) {
       sorts[idx].dir = newValue;
     } else {
-      if (this.sortType === SortType.single || this.sortType === SortType.singleResettable) {
+      if (this.sortType === SortType.single || this.sortType === SortType.singleResettable || multiToSkipType) {
         sorts.splice(0, this.sorts.length);
       }
 

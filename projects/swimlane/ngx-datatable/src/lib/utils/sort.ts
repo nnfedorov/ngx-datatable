@@ -5,8 +5,10 @@ import { SortPropDir } from '../types/sort-prop-dir.type';
 /**
  * Gets the next sort direction
  */
-export function nextSortDir(sortType: SortType, current: SortDirection): SortDirection | undefined {
-  if (sortType === SortType.single) {
+export function nextSortDir(sortType: SortType, current: SortDirection, event?: MouseEvent): SortDirection | undefined {
+  const multiToSkipType = sortType === SortType.multi && event && !event.ctrlKey; // "multi" mode without Ctrl
+  // should work as "single" one
+  if (sortType === SortType.single || multiToSkipType) {
     if (current === SortDirection.asc) {
       return SortDirection.desc;
     } else {

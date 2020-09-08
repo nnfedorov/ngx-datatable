@@ -28,7 +28,7 @@ import { SortDirection } from '../../types/sort-direction.type';
         <input type="checkbox" [checked]="allRowsSelected" (change)="select.emit(!allRowsSelected)" />
       </label>
       <span *ngIf="!column.headerTemplate" class="datatable-header-cell-wrapper">
-        <span class="datatable-header-cell-label draggable" (click)="onSort()" [innerHTML]="name"> </span>
+        <span class="datatable-header-cell-label draggable" (click)="onSort($event)" [innerHTML]="name"> </span>
       </span>
       <ng-template
         *ngIf="column.headerTemplate"
@@ -36,7 +36,7 @@ import { SortDirection } from '../../types/sort-direction.type';
         [ngTemplateOutletContext]="cellContext"
       >
       </ng-template>
-      <span (click)="onSort()" [class]="sortClass"> </span>
+      <span (click)="onSort($event)" [class]="sortClass"> </span>
     </div>
   `,
   host: {
@@ -191,14 +191,15 @@ export class DataTableHeaderCellComponent {
     }
   }
 
-  onSort(): void {
+  onSort(event?: MouseEvent): void {
     if (!this.column.sortable) return;
 
-    const newValue = nextSortDir(this.sortType, this.sortDir);
+    const newValue = nextSortDir(this.sortType, this.sortDir, event);
     this.sort.emit({
       column: this.column,
       prevValue: this.sortDir,
-      newValue
+      newValue,
+      event
     });
   }
 
