@@ -34,6 +34,7 @@ const MS_MAX_HEIGHT = 10737418;
       [rowIdentity]="rowIdentity"
       (select)="select.emit($event)"
       (activate)="activate.emit($event)"
+      (focusRowRequested)="onFocusRowRequested($event)"
     >
       <datatable-scroller
         *ngIf="rows?.length"
@@ -356,6 +357,11 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     }
 
     this.scroller.setOffset(offset || 0);
+  }
+
+  onFocusRowRequested(params: { type: 'prev' | 'next' }): void {
+    const rowIndex = params.type === 'prev' ? this.indexes.first - 1 : this.indexes.last + 1;
+    this.scroller.setOffset(this.rowHeightsCache.query(rowIndex - 1));
   }
 
   /**

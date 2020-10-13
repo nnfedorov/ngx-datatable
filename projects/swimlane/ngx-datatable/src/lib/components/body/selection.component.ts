@@ -27,6 +27,7 @@ export class DataTableSelectionComponent {
 
   @Output() activate: EventEmitter<any> = new EventEmitter();
   @Output() select: EventEmitter<any> = new EventEmitter();
+  @Output() focusRowRequested: EventEmitter<{ type: 'prev' | 'next' }> = new EventEmitter();
 
   prevIndex: number;
 
@@ -102,7 +103,11 @@ export class DataTableSelectionComponent {
 
   focusRow(rowElement: any, keyCode: number): void {
     const nextRowElement = this.getPrevNextRow(rowElement, keyCode);
-    if (nextRowElement) nextRowElement.focus();
+    if (nextRowElement) {
+      nextRowElement.focus();
+    } else {
+      this.focusRowRequested.emit({ type: keyCode === Keys.down ? 'next' : 'prev' });
+    }
   }
 
   getPrevNextRow(rowElement: any, keyCode: number): any {
