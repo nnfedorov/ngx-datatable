@@ -8,7 +8,9 @@ import {
   ViewChild,
   OnInit,
   OnDestroy,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  HostListener,
+  ElementRef
 } from '@angular/core';
 import { ScrollerComponent } from './scroller.component';
 import { SelectionType } from '../../types/selection.type';
@@ -16,6 +18,7 @@ import { columnsByPin, columnGroupWidths } from '../../utils/column';
 import { RowHeightCache } from '../../utils/row-height-cache';
 import { translateXY } from '../../utils/translate';
 import { isFF, isMS } from '../../utils/facade/browser';
+import { Keys } from '../../utils/keys';
 
 const FF_MAX_HEIGHT = 8947840;
 const MS_MAX_HEIGHT = 10737418;
@@ -220,6 +223,9 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     return this._bodyHeight;
   }
 
+  @HostBinding('tabindex')
+  tabIndex = -1;
+
   @Output() scroll: EventEmitter<any> = new EventEmitter();
   @Output() page: EventEmitter<any> = new EventEmitter();
   @Output() activate: EventEmitter<any> = new EventEmitter();
@@ -279,7 +285,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
   /**
    * Creates an instance of DataTableBodyComponent.
    */
-  constructor(private cd: ChangeDetectorRef) {
+  constructor(private cd: ChangeDetectorRef, private elementRef: ElementRef) {
     // declare fn here so we can get access to the `this` property
     this.rowTrackingFn = (index: number, row: any): any => {
       const idx = this.getRowIndex(row);
@@ -360,8 +366,31 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
   }
 
   onFocusRowRequested(params: { type: 'prev' | 'next' }): void {
-    const rowIndex = params.type === 'prev' ? this.indexes.first - 1 : this.indexes.last + 1;
-    this.scroller.setOffset(this.rowHeightsCache.query(rowIndex - 1));
+    const rowIndex =
+      params.type === 'prev'
+        ? this.indexes.first - Math.ceil(this.pageSize * 0.5)
+        : this.indexes.first + Math.ceil(this.pageSize * 1.5);
+    this.scroller.setOffset(this.rowHeightsCache.query(rowIndex));
+  }
+
+  @HostListener('keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    const keyCode = event.keyCode;
+
+    const isAction = keyCode === Keys.pageUp || keyCode === Keys.pageDown;
+
+    if (isAction) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const rowIndex =
+        keyCode === Keys.pageUp
+          ? Math.max(0, this.indexes.first - this.pageSize)
+          : /*this.indexes.last - 2*/ this.indexes.first + this.pageSize - 2;
+      this.scroller.setOffset(this.rowHeightsCache.query(rowIndex));
+
+      this.elementRef.nativeElement.focus(); // preserve focus on table body for upcoming events
+    }
   }
 
   /**
