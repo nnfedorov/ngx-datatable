@@ -369,7 +369,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     const rowIndex =
       params.type === 'prev'
         ? this.indexes.first - Math.ceil(this.pageSize * 0.5)
-        : this.indexes.first + Math.ceil(this.pageSize * 1.5);
+        : this.indexes.first + Math.ceil(this.pageSize * 0.5);
     this.scroller.setOffset(this.rowHeightsCache.query(rowIndex));
   }
 
