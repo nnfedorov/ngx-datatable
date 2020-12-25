@@ -39,8 +39,8 @@ const MS_MAX_HEIGHT = 10737418;
       (activate)="activate.emit($event)"
       (focusRowRequested)="onFocusRowRequested($event)"
     >
+      <!-- #21433 display scroller even if table is empty *ngIf="rows?.length" -->
       <datatable-scroller
-        *ngIf="rows?.length"
         [scrollbarV]="scrollbarV"
         [scrollbarH]="scrollbarH"
         [scrollHeight]="scrollHeight"
