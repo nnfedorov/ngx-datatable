@@ -69,7 +69,7 @@ export class ScrollerComponent implements OnInit, OnDestroy {
 
     if (this.onMouseDownListener) {
       // #18478
-      this.parentElement.removeEventListener('mousedown', this.onMouseDownListener);
+      this.parentElement?.removeEventListener('mousedown', this.onMouseDownListener);
     }
   }
 
