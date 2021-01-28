@@ -439,6 +439,10 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     this.cd.detectChanges();
   }
 
+  public markForCheck(): void {
+    this.cd.markForCheck();
+  }
+
   /**
    * Updates the rows in the view port
    */
