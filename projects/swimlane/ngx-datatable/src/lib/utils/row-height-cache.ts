@@ -108,7 +108,8 @@ export class RowHeightCache {
    */
   query(atIndex: number): number {
     if (!this.treeArray.length) {
-      throw new Error(`query at index ${atIndex} failed: Fenwick tree array not initialized.`);
+      // throw new Error(`query at index ${atIndex} failed: Fenwick tree array not initialized.`);
+      return 0; // #21433
     }
 
     let sum = 0;
