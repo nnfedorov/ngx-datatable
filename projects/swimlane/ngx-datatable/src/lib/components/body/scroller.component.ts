@@ -55,7 +55,10 @@ export class ScrollerComponent implements OnInit, OnDestroy {
       const renderer = this.renderer;
       this.parentElement = renderer.parentNode(renderer.parentNode(this.element));
       this._scrollEventListener = this.onScrolled.bind(this);
-      this.parentElement.addEventListener('scroll', this._scrollEventListener);
+
+      this.ngZone.runOutsideAngular(() => {
+        this.parentElement.addEventListener('scroll', this._scrollEventListener);
+      });
 
       this.parentElement.addEventListener('mousedown', this.onMouseDownListener); // #18478
     }
@@ -126,7 +129,9 @@ export class ScrollerComponent implements OnInit, OnDestroy {
       this.initX = event.pageX;
       this.initY = event.pageY;
 
-      this.parentElement.addEventListener('mousemove', this.onMouseMoveFn);
+      this.ngZone.runOutsideAngular(() => {
+        this.parentElement.addEventListener('mousemove', this.onMouseMoveFn);
+      });
 
       document.addEventListener('mouseup', this.onDocumentMouseUpFn);
       document.addEventListener('dragend', this.onDocumentDragEndFn); // fixes missed document's 'mouseup' event
@@ -138,7 +143,7 @@ export class ScrollerComponent implements OnInit, OnDestroy {
   private onMouseMoveFn = (event: MouseEvent) => {
     // console.log('onMouseMove()', event);
     if (!this.touchScrollOn) {
-      this.parentElement.classList.add('touch-scroll_on'); // switches off scroll snap in advance to prevent jumping
+      this.renderer.addClass(this.parentElement, 'touch-scroll_on'); // switches off scroll snap in advance to prevent jumping
       this.touchScrollOn = true;
     }
 
@@ -148,7 +153,7 @@ export class ScrollerComponent implements OnInit, OnDestroy {
         Math.abs(this.initX - event.pageX) > this.moveThresholdInPx ||
         Math.abs(this.initY - event.pageY) > this.moveThresholdInPx
       ) {
-        this.parentElement.classList.add('touch-scroll_move');
+        this.renderer.addClass(this.parentElement, 'touch-scroll_move');
         this.touchScrollMove = true;
       } else {
         // return; // no move
@@ -172,8 +177,8 @@ export class ScrollerComponent implements OnInit, OnDestroy {
 
     this.resetCursor();
 
-    this.parentElement.classList.remove('touch-scroll_on');
-    this.parentElement.classList.remove('touch-scroll_move');
+    this.renderer.removeClass(this.parentElement, 'touch-scroll_on');
+    this.renderer.removeClass(this.parentElement, 'touch-scroll_move');
 
     this.touchScrollOn = false;
     this.touchScrollMove = false;
