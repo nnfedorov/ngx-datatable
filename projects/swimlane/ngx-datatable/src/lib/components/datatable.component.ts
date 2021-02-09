@@ -286,7 +286,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * Swap columns on re-order columns or
    * move them.
    */
-  @Input() swapColumns: boolean = true;
+  @Input() swapColumns: boolean = false;
 
   /**
    * The type of sorting
@@ -635,6 +635,13 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   _columns: TableColumn[];
   _columnTemplates: QueryList<DataTableColumnDirective>;
   _subscriptions: Subscription[] = [];
+
+  scrollBodyHorizontallyFn = (delta: number) => {
+    const scrollerParent = this.bodyComponent.scroller?.parentElement;
+    if (scrollerParent) {
+      scrollerParent.scrollLeft += delta;
+    }
+  };
 
   constructor(
     @SkipSelf() private scrollbarHelper: ScrollbarHelper,
@@ -1051,7 +1058,8 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     this.reorder.emit({
       column,
       newValue,
-      prevValue
+      prevValue,
+      columns: cols
     });
   }
 

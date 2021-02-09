@@ -17,7 +17,12 @@ import { SortDirection } from '../../types/sort-direction.type';
 @Component({
   selector: 'datatable-header-cell',
   template: `
-    <div class="datatable-header-cell-template-wrap">
+    <div
+      class="datatable-header-cell-template-wrap"
+      [draggable]="reorderable"
+      (dragstart)="dragStart.emit()"
+      (dragend)="dragEnd.emit()"
+    >
       <ng-template
         *ngIf="isTarget"
         [ngTemplateOutlet]="targetMarkerTemplate"
@@ -37,6 +42,14 @@ import { SortDirection } from '../../types/sort-direction.type';
       >
       </ng-template>
       <span (click)="onSort($event)" [class]="sortClass"> </span>
+
+      <div
+        *ngIf="draggedColumn && draggedColumn != column && column.draggable"
+        class="reorder-drop-slot"
+        [class.reorder-drop-slot_after]="column.isAfterDragged"
+        [slotAllowDrop]="true"
+        (slotDrop)="dropped.emit()"
+      ></div>
     </div>
   `,
   host: {
@@ -91,6 +104,13 @@ export class DataTableHeaderCellComponent {
   get sorts(): any[] {
     return this._sorts;
   }
+
+  @Input() reorderable?: boolean;
+  @Input() draggedColumn?: any;
+
+  @Output() dragStart = new EventEmitter<void>();
+  @Output() dragEnd = new EventEmitter<void>();
+  @Output() dropped = new EventEmitter<void>();
 
   @Output() sort: EventEmitter<any> = new EventEmitter();
   @Output() select: EventEmitter<any> = new EventEmitter();

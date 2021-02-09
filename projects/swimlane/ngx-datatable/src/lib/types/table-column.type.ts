@@ -216,4 +216,11 @@ export interface TableColumn {
    * @memberOf TableColumn
    */
   summaryTemplate?: any;
+
+  /**
+   * Is located after column being dragged
+   *
+   * @memberOf TableColumn
+   */
+  isAfterDragged?: boolean;
 }

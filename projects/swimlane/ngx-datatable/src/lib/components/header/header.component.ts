@@ -17,13 +17,7 @@ import { translateXY } from '../../utils/translate';
 @Component({
   selector: 'datatable-header',
   template: `
-    <div
-      orderable
-      (reorder)="onColumnReordered($event)"
-      (targetChanged)="onTargetChanged($event)"
-      [style.width.px]="_columnGroupWidths.total"
-      class="datatable-header-inner"
-    >
+    <div [style.width.px]="_columnGroupWidths.total" class="datatable-header-inner">
       <div
         *ngFor="let colGroup of _columnsByPin; trackBy: trackByGroups"
         [class]="'datatable-row-' + colGroup.type"
@@ -34,20 +28,8 @@ import { translateXY } from '../../utils/translate';
           resizeable
           [resizeEnabled]="column.resizeable"
           (resize)="onColumnResized($event, column)"
-          long-press
-          [pressModel]="column"
-          [pressEnabled]="reorderable && column.draggable"
-          (longPressStart)="onLongPressStart($event)"
-          (longPressEnd)="onLongPressEnd($event)"
-          draggable
-          [dragX]="reorderable && column.draggable && column.dragging"
-          [dragY]="false"
-          [dragModel]="column"
-          [dragEventTarget]="dragEventTarget"
           [headerHeight]="headerHeight"
           [isTarget]="column.isTarget"
-          [targetMarkerTemplate]="targetMarkerTemplate"
-          [targetMarkerContext]="column.targetMarkerContext"
           [column]="column"
           [sortType]="sortType"
           [sorts]="sorts"
@@ -56,6 +38,11 @@ import { translateXY } from '../../utils/translate';
           [sortDescendingIcon]="sortDescendingIcon"
           [sortUnsetIcon]="sortUnsetIcon"
           [allRowsSelected]="allRowsSelected"
+          [reorderable]="reorderable && column.draggable"
+          [draggedColumn]="draggedColumn"
+          (dragStart)="onColumnDragStart(column)"
+          (dragEnd)="onColumnDragEnd(column)"
+          (dropped)="onColumnDropped(column)"
           (sort)="onSort($event)"
           (select)="select.emit($event)"
           (columnContextmenu)="columnContextmenu.emit($event)"
@@ -63,6 +50,11 @@ import { translateXY } from '../../utils/translate';
         </datatable-header-cell>
       </div>
     </div>
+
+    <ng-container *ngIf="scrollbarH && reorderable && draggedColumn">
+      <div class="scroll-helper scroll-helper_left" [dragOverListener]="leftDragOverLister"></div>
+      <div class="scroll-helper scroll-helper_right" [dragOverListener]="rightDragOverLister"></div>
+    </ng-container>
   `,
   host: {
     class: 'datatable-header'
@@ -99,6 +91,8 @@ export class DataTableHeaderComponent implements OnDestroy {
   @Input() allRowsSelected: boolean;
   @Input() selectionType: SelectionType;
   @Input() reorderable: boolean;
+
+  @Input() scrollBodyHorizontallyFn: (delta: number) => void;
 
   dragEventTarget: any;
 
@@ -335,5 +329,33 @@ export class DataTableHeaderComponent implements OnDestroy {
     }
 
     return styles;
+  }
+
+  /***** Reorder *****/
+  draggedColumn?: any;
+
+  leftDragOverLister = () => this.scrollBodyHorizontallyFn(-75);
+  rightDragOverLister = () => this.scrollBodyHorizontallyFn(75);
+
+  onColumnDragStart(column: any): void {
+    this.draggedColumn = column;
+    const draggedIndex = this.columns.indexOf(column);
+    this.columns.forEach((c, i) => (c.isAfterDragged = i > draggedIndex));
+  }
+
+  onColumnDragEnd(column: any): void {
+    this.draggedColumn = undefined;
+    this.columns.forEach((c, i) => delete c.isAfterDragged);
+  }
+
+  onColumnDropped(targetColumn: any): void {
+    if (!this.draggedColumn) {
+      return;
+    }
+    this.reorder.emit({
+      column: this.draggedColumn,
+      prevValue: this.columns.indexOf(this.draggedColumn),
+      newValue: this.columns.indexOf(targetColumn)
+    });
   }
 }

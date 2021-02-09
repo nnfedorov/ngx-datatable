@@ -9,6 +9,8 @@ import { DraggableDirective } from './directives/draggable.directive';
 import { ResizeableDirective } from './directives/resizeable.directive';
 import { OrderableDirective } from './directives/orderable.directive';
 import { LongPressDirective } from './directives/long-press.directive';
+import { DragOverListenerDirective } from './directives/dnd/drag-over-listener.directive';
+import { SlotDropDirective } from './directives/dnd/slot-drop.directive';
 import { ScrollerComponent } from './components/body/scroller.component';
 import { DatatableComponent } from './components/datatable.component';
 import { DataTableColumnDirective } from './components/columns/column.directive';
@@ -42,6 +44,8 @@ import { DataTableSummaryRowComponent } from './components/body/summary/summary-
     ResizeableDirective,
     OrderableDirective,
     LongPressDirective,
+    DragOverListenerDirective,
+    SlotDropDirective,
     ScrollerComponent,
     DatatableComponent,
     DataTableColumnDirective,
