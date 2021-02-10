@@ -1058,8 +1058,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     this.reorder.emit({
       column,
       newValue,
-      prevValue,
-      columns: cols
+      prevValue
     });
   }
 
