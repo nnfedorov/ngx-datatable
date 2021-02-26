@@ -139,6 +139,8 @@ export class DataTableSelectionComponent {
       if (nextRowElement) {
         const children = nextRowElement.getElementsByClassName('datatable-body-cell');
         if (children.length) nextCellElement = children[cellIndex];
+      } else {
+        this.focusRowRequested.emit({ type: keyCode === Keys.down ? 'next' : 'prev' });
       }
     }
 
