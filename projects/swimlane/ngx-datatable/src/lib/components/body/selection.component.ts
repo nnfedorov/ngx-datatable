@@ -10,6 +10,7 @@ export interface Model {
   rowElement: any;
   cellElement: any;
   cellIndex: number;
+  groupIndex: number;
 }
 
 @Component({
@@ -96,7 +97,7 @@ export class DataTableSelectionComponent {
       if (!model.cellElement || !isCellSelection) {
         this.focusRow(model.rowElement, keyCode);
       } else if (isCellSelection) {
-        this.focusCell(model.cellElement, model.rowElement, keyCode, model.cellIndex);
+        this.focusCell(model.cellElement, model.rowElement, keyCode, model.cellIndex, model.groupIndex);
       }
     }
   }
@@ -127,18 +128,25 @@ export class DataTableSelectionComponent {
     }
   }
 
-  focusCell(cellElement: any, rowElement: any, keyCode: number, cellIndex: number): void {
+  focusCell(cellElement: any, rowElement: any, keyCode: number, cellIndex: number, groupIndex: number): void {
     let nextCellElement: HTMLElement;
 
     if (keyCode === Keys.left) {
       nextCellElement = cellElement.previousElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.previousElementSibling?.lastElementChild;
+      }
     } else if (keyCode === Keys.right) {
       nextCellElement = cellElement.nextElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.nextElementSibling?.firstElementChild;
+      }
     } else if (keyCode === Keys.up || keyCode === Keys.down) {
       const nextRowElement = this.getPrevNextRow(rowElement, keyCode);
       if (nextRowElement) {
-        const children = nextRowElement.getElementsByClassName('datatable-body-cell');
-        if (children.length) nextCellElement = children[cellIndex];
+        // const children = nextRowElement.getElementsByClassName('datatable-body-cell');
+        // if (children.length) nextCellElement = children[cellIndex];
+        nextCellElement = nextRowElement.children[groupIndex]?.children[cellIndex];
       } else {
         this.focusRowRequested.emit({ type: keyCode === Keys.down ? 'next' : 'prev' });
       }

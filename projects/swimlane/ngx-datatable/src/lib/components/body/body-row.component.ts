@@ -41,7 +41,7 @@ import { translateXY } from '../../utils/translate';
         [rowHeight]="rowHeight"
         [displayCheck]="displayCheck"
         [treeStatus]="treeStatus"
-        (activate)="onActivate($event, ii)"
+        (activate)="onActivate($event, ii, i)"
         (treeAction)="onTreeAction()"
       >
       </datatable-body-cell>
@@ -200,8 +200,9 @@ export class DataTableBodyRowComponent implements DoCheck {
     return styles;
   }
 
-  onActivate(event: any, index: number): void {
+  onActivate(event: any, index: number, groupIndex: number): void {
     event.cellIndex = index;
+    event.groupIndex = groupIndex;
     event.rowElement = this._element;
     this.activate.emit(event);
   }
