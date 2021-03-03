@@ -38,9 +38,11 @@ export class DataTableSelectionComponent {
     const chkbox = this.selectionType === SelectionType.checkbox;
     const multi = this.selectionType === SelectionType.multi;
     const multiClick = this.selectionType === SelectionType.multiClick;
+    const cell = this.selectionType === SelectionType.cell;
     let selected: any[] = [];
 
-    if (multi || chkbox || multiClick) {
+    if (multi || chkbox || multiClick || cell) {
+      // allow rows multiselect for SelectionType.cell as well
       if (event.shiftKey) {
         selected = selectRowsBetween([], this.rows, index, this.prevIndex, this.getRowSelectedIdx.bind(this));
         if (selected.some(r => !r)) {
