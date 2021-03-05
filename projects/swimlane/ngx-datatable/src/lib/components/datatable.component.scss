@@ -140,6 +140,7 @@
     /* Header scroll helper */
     .scroll-helper {
       position: absolute;
+      z-index: 10; /* place helper above frozen columns */
       height: 100%;
       top: 0;
       width: 30px;
