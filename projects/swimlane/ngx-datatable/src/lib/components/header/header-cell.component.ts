@@ -214,7 +214,7 @@ export class DataTableHeaderCellComponent {
   onSort(event?: MouseEvent): void {
     if (!this.column.sortable) return;
 
-    const newValue = nextSortDir(this.sortType, this.sortDir, event);
+    const newValue = nextSortDir(this.sortType, this.sortDir, event, this.column.firstSortDir);
     this.sort.emit({
       column: this.column,
       prevValue: this.sortDir,
