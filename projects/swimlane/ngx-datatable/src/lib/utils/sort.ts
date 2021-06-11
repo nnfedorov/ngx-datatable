@@ -26,11 +26,13 @@ export function nextSortDir(
     }
   } else {
     // SortType.multi or SortType.singleResettable
+    const firstDir = firstSortDir ?? SortDirection.asc; // #22078, #18318 consider firstSortDir in 'singleResettable' mode
+    const secondDir = firstDir === SortDirection.asc ? SortDirection.desc : SortDirection.asc;
     if (!current) {
-      return SortDirection.asc;
-    } else if (current === SortDirection.asc) {
-      return SortDirection.desc;
-    } else if (current === SortDirection.desc) {
+      return firstDir;
+    } else if (current === firstDir) {
+      return secondDir;
+    } else if (current === secondDir) {
       return undefined;
     }
     // avoid TS7030: Not all code paths return a value.
