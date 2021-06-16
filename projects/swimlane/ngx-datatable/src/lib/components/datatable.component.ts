@@ -144,6 +144,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
       this._internalColumns = [...val];
       setColumnDefaults(this._internalColumns);
       this.recalculateColumns();
+      this.validateScrollLeft();
     }
 
     this._columns = val;
@@ -636,8 +637,12 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   _columnTemplates: QueryList<DataTableColumnDirective>;
   _subscriptions: Subscription[] = [];
 
+  private get scrollerParent(): HTMLElement | undefined {
+    return this.bodyComponent?.scroller?.parentElement;
+  }
+
   scrollBodyHorizontallyFn = (delta: number) => {
-    const scrollerParent = this.bodyComponent.scroller?.parentElement;
+    const scrollerParent = this.scrollerParent;
     if (scrollerParent) {
       scrollerParent.scrollLeft += delta;
     }
@@ -845,6 +850,19 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     }
 
     return columns;
+  }
+
+  private validateScrollLeft(): void {
+    const element = this.scrollerParent;
+    if (!element || element.scrollLeft === 0) {
+      return;
+    }
+
+    const columnsWidth = this._internalColumns.reduce((w, c) => w + c.width, 0);
+    if (columnsWidth < element.scrollLeft + element.clientWidth) {
+      // scroll to the left in order to get rid of the gap after the last column
+      element.scrollLeft = Math.max(columnsWidth - element.clientWidth, 0);
+    }
   }
 
   private get hasScrollbarV(): boolean {
