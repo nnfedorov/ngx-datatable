@@ -825,6 +825,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   @throttleable(5)
   onWindowResize(): void {
     this.recalculate();
+    setTimeout(() => this.validateScrollLeft());
   }
 
   /**
