@@ -84,6 +84,7 @@ const MS_MAX_HEIGHT = 10737418;
             [rowClass]="rowClass"
             [displayCheck]="displayCheck"
             [treeStatus]="group && group.treeStatus"
+            [hasScrollbarV]="hasScrollbarV"
             (treeAction)="onTreeAction(group)"
             (activate)="selector.onActivate($event, indexes.first + i)"
           >
@@ -151,6 +152,8 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
   @Input() summaryRow: boolean;
   @Input() summaryPosition: string;
   @Input() summaryHeight: number;
+
+  @Input() hasScrollbarV?: boolean;
 
   @Input() set pageSize(val: number) {
     this._pageSize = val;

@@ -83,6 +83,8 @@ export class DataTableBodyRowComponent implements DoCheck {
   @Input() displayCheck: any;
   @Input() treeStatus: TreeStatus = 'collapsed';
 
+  @Input() hasScrollbarV?: boolean;
+
   @Input()
   set offsetX(val: number) {
     this._offsetX = val;
@@ -193,7 +195,7 @@ export class DataTableBodyRowComponent implements DoCheck {
       const bodyWidth = parseInt(this.innerWidth + '', 0);
       const totalDiff = widths.total - bodyWidth;
       const offsetDiff = totalDiff - offsetX;
-      const offset = (offsetDiff + this.scrollbarHelper.width) * -1;
+      const offset = (offsetDiff + (this.hasScrollbarV ? this.scrollbarHelper.width : 0)) * -1;
       translateXY(styles, offset, 0);
     }
 
