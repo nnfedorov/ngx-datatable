@@ -73,6 +73,7 @@ const MS_MAX_HEIGHT = 10737418;
           <datatable-body-row
             *ngIf="!groupedRows; else groupedRowsTemplate"
             tabindex="-1"
+            [hasScrollbarV]="hasScrollbarV"
             [isSelected]="selector.getRowSelected(group)"
             [innerWidth]="innerWidth"
             [offsetX]="offsetX"
@@ -84,7 +85,6 @@ const MS_MAX_HEIGHT = 10737418;
             [rowClass]="rowClass"
             [displayCheck]="displayCheck"
             [treeStatus]="group && group.treeStatus"
-            [hasScrollbarV]="hasScrollbarV"
             (treeAction)="onTreeAction(group)"
             (activate)="selector.onActivate($event, indexes.first + i)"
           >
