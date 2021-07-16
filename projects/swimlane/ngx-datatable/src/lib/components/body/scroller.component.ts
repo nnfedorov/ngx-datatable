@@ -110,8 +110,8 @@ export class ScrollerComponent implements OnInit, OnDestroy {
   }
 
   /***** Touch Scroll *****/
-  @Input() scrollH = true;
-  @Input() scrollV = true;
+  @Input() touchScrollV?: boolean;
+  @Input() touchScrollH?: boolean;
   @Input() tipDelayInMs = 100;
   @Input() moveThresholdInPx = 10; // defines the minimum offset that we'd like to consider as 'move'
 
@@ -123,6 +123,10 @@ export class ScrollerComponent implements OnInit, OnDestroy {
   private initY: number;
 
   onMouseDownListener = (event: MouseEvent) => {
+    if (!this.touchScrollV && !this.touchScrollH) {
+      return;
+    }
+
     // console.log('onMouseDown()', event);
     if (event.button === 0) {
       // left button pressed
@@ -160,10 +164,10 @@ export class ScrollerComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (this.scrollV) {
+    if (this.touchScrollV) {
       this.parentElement.scrollTop -= event.movementY;
     }
-    if (this.scrollH) {
+    if (this.touchScrollH) {
       this.parentElement.scrollLeft -= event.movementX;
     }
   };

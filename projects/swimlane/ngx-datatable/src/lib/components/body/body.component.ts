@@ -43,6 +43,8 @@ const MS_MAX_HEIGHT = 10737418;
       <datatable-scroller
         [scrollbarV]="scrollbarV"
         [scrollbarH]="scrollbarH"
+        [touchScrollV]="touchScrollV"
+        [touchScrollH]="touchScrollH"
         [scrollHeight]="scrollHeight"
         [scrollWidth]="columnGroupWidths?.total"
         (scroll)="onBodyScroll($event)"
@@ -130,6 +132,8 @@ const MS_MAX_HEIGHT = 10737418;
 export class DataTableBodyComponent implements OnInit, OnDestroy {
   @Input() scrollbarV: boolean;
   @Input() scrollbarH: boolean;
+  @Input() touchScrollV?: boolean;
+  @Input() touchScrollH?: boolean;
   @Input() loadingIndicator: boolean;
   @Input() externalPaging: boolean;
   @Input() rowHeight: number | 'auto' | ((row?: any) => number);

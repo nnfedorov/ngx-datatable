@@ -174,6 +174,9 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    */
   @Input() scrollbarH: boolean = false;
 
+  @Input() touchScrollV: boolean = true;
+  @Input() touchScrollH: boolean = true;
+
   /**
    * The row height; which is necessary
    * to calculate the height for the lazy rendering.
