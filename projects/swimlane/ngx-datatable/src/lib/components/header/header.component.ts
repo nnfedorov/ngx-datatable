@@ -6,7 +6,9 @@ import {
   HostBinding,
   ChangeDetectorRef,
   ChangeDetectionStrategy,
-  OnDestroy
+  OnDestroy,
+  HostListener,
+  ElementRef
 } from '@angular/core';
 import { columnsByPin, columnGroupWidths, columnsByPinArr } from '../../utils/column';
 import { SortType } from '../../types/sort.type';
@@ -156,7 +158,16 @@ export class DataTableHeaderComponent implements OnDestroy {
 
   private destroyed = false;
 
-  constructor(private cd: ChangeDetectorRef) {}
+  constructor(private cd: ChangeDetectorRef, private elementRef: ElementRef) {}
+
+  @HostListener('contextmenu', ['$event'])
+  onContextmenu($event: MouseEvent): void {
+    // fire event only when it comes from header element itself,
+    // otherwise it will be fired in header cell
+    if ($event.target === this.elementRef.nativeElement) {
+      this.columnContextmenu.emit({ event: $event, column: null });
+    }
+  }
 
   ngOnDestroy(): void {
     this.destroyed = true;
