@@ -878,7 +878,9 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     }
     // this.scrollbarV = this.element.scrollHeight > this.element.clientHeight;
     // this.scrollbarV = this.element.clientWidth + 5 < this.element.offsetWidth;
-    this.hasScrollbarV = this.rowCount * <number>this.rowHeight > this.bodyHeight;
+    this.hasScrollbarV =
+      typeof this.rowHeight !== 'number' ||
+      this.rowCount * this.rowHeight + this.scrollbarHelper.width > this.bodyHeight;
   }
 
   /**
