@@ -144,6 +144,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
       this._internalColumns = [...val];
       setColumnDefaults(this._internalColumns);
       this.recalculateColumns();
+      this.validateScrollLeft();
     }
 
     this._columns = val;
@@ -172,6 +173,9 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * Enable horz scrollbars
    */
   @Input() scrollbarH: boolean = false;
+
+  @Input() touchScrollV: boolean = true;
+  @Input() touchScrollH: boolean = true;
 
   /**
    * The row height; which is necessary
@@ -286,7 +290,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * Swap columns on re-order columns or
    * move them.
    */
-  @Input() swapColumns: boolean = true;
+  @Input() swapColumns: boolean = false;
 
   /**
    * The type of sorting
@@ -636,6 +640,17 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   _columnTemplates: QueryList<DataTableColumnDirective>;
   _subscriptions: Subscription[] = [];
 
+  private get scrollerParent(): HTMLElement | undefined {
+    return this.bodyComponent?.scroller?.parentElement;
+  }
+
+  scrollBodyHorizontallyFn = (delta: number) => {
+    const scrollerParent = this.scrollerParent;
+    if (scrollerParent) {
+      scrollerParent.scrollLeft += delta;
+    }
+  };
+
   constructor(
     @SkipSelf() private scrollbarHelper: ScrollbarHelper,
     @SkipSelf() private dimensionsHelper: DimensionsHelper,
@@ -813,6 +828,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   @throttleable(5)
   onWindowResize(): void {
     this.recalculate();
+    setTimeout(() => this.validateScrollLeft());
   }
 
   /**
@@ -827,7 +843,8 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     if (!columns) return undefined;
 
     let width = this._innerWidth;
-    if (this.scrollbarV) {
+    this.calcHasScrollbarV();
+    if (this.scrollbarV && this.hasScrollbarV) {
       width = width - this.scrollbarHelper.width;
     }
 
@@ -838,6 +855,32 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     }
 
     return columns;
+  }
+
+  private validateScrollLeft(): void {
+    const element = this.scrollerParent;
+    if (!element || element.scrollLeft === 0) {
+      return;
+    }
+
+    const columnsWidth = this._internalColumns.reduce((w, c) => w + c.width, 0);
+    if (columnsWidth < element.scrollLeft + element.clientWidth) {
+      // scroll to the left in order to get rid of the gap after the last column
+      element.scrollLeft = Math.max(columnsWidth - element.clientWidth, 0);
+    }
+  }
+
+  hasScrollbarV?: boolean;
+
+  private calcHasScrollbarV(): void {
+    if (!this.scrollbarV) {
+      return;
+    }
+    // this.scrollbarV = this.element.scrollHeight > this.element.clientHeight;
+    // this.scrollbarV = this.element.clientWidth + 5 < this.element.offsetWidth;
+    this.hasScrollbarV =
+      typeof this.rowHeight !== 'number' ||
+      this.rowCount * this.rowHeight + this.scrollbarHelper.width > this.bodyHeight;
   }
 
   /**

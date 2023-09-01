@@ -8,13 +8,20 @@ import {
   ViewChild,
   OnInit,
   OnDestroy,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  HostListener,
+  ElementRef
 } from '@angular/core';
 import { ScrollerComponent } from './scroller.component';
 import { SelectionType } from '../../types/selection.type';
 import { columnsByPin, columnGroupWidths } from '../../utils/column';
 import { RowHeightCache } from '../../utils/row-height-cache';
 import { translateXY } from '../../utils/translate';
+import { isFF, isMS } from '../../utils/facade/browser';
+import { Keys } from '../../utils/keys';
+
+const FF_MAX_HEIGHT = 8947840;
+const MS_MAX_HEIGHT = 10737418;
 
 @Component({
   selector: 'datatable-body',
@@ -30,11 +37,14 @@ import { translateXY } from '../../utils/translate';
       [rowIdentity]="rowIdentity"
       (select)="select.emit($event)"
       (activate)="activate.emit($event)"
+      (focusRowRequested)="onFocusRowRequested($event)"
     >
+      <!-- #21433 display scroller even if table is empty *ngIf="rows?.length" -->
       <datatable-scroller
-        *ngIf="rows?.length"
         [scrollbarV]="scrollbarV"
         [scrollbarH]="scrollbarH"
+        [touchScrollV]="touchScrollV"
+        [touchScrollH]="touchScrollH"
         [scrollHeight]="scrollHeight"
         [scrollWidth]="columnGroupWidths?.total"
         (scroll)="onBodyScroll($event)"
@@ -66,6 +76,7 @@ import { translateXY } from '../../utils/translate';
             role="row"
             *ngIf="!groupedRows; else groupedRowsTemplate"
             tabindex="-1"
+            [hasScrollbarV]="hasScrollbarV"
             [isSelected]="selector.getRowSelected(group)"
             [innerWidth]="innerWidth"
             [offsetX]="offsetX"
@@ -124,6 +135,8 @@ import { translateXY } from '../../utils/translate';
 export class DataTableBodyComponent implements OnInit, OnDestroy {
   @Input() scrollbarV: boolean;
   @Input() scrollbarH: boolean;
+  @Input() touchScrollV?: boolean;
+  @Input() touchScrollH?: boolean;
   @Input() loadingIndicator: boolean;
   @Input() externalPaging: boolean;
   @Input() rowHeight: number | 'auto' | ((row?: any) => number);
@@ -146,6 +159,8 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
   @Input() summaryRow: boolean;
   @Input() summaryPosition: string;
   @Input() summaryHeight: number;
+
+  @Input() hasScrollbarV?: boolean;
 
   @Input() set pageSize(val: number) {
     this._pageSize = val;
@@ -218,6 +233,9 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     return this._bodyHeight;
   }
 
+  @HostBinding('tabindex')
+  tabIndex = -1;
+
   @Output() scroll: EventEmitter<any> = new EventEmitter();
   @Output() page: EventEmitter<any> = new EventEmitter();
   @Output() activate: EventEmitter<any> = new EventEmitter();
@@ -242,7 +260,15 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
    */
   get scrollHeight(): number | undefined {
     if (this.scrollbarV && this.virtualization && this.rowCount) {
-      return this.rowHeightsCache.query(this.rowCount - 1);
+      let height = this.rowHeightsCache.query(this.rowCount - 1);
+      if (height > FF_MAX_HEIGHT) {
+        if (isFF) {
+          height = FF_MAX_HEIGHT;
+        } else if (height > MS_MAX_HEIGHT && isMS) {
+          height = MS_MAX_HEIGHT;
+        }
+      }
+      return height;
     }
     // avoid TS7030: Not all code paths return a value.
     return undefined;
@@ -269,7 +295,7 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
   /**
    * Creates an instance of DataTableBodyComponent.
    */
-  constructor(private cd: ChangeDetectorRef) {
+  constructor(private cd: ChangeDetectorRef, private elementRef: ElementRef) {
     // declare fn here so we can get access to the `this` property
     this.rowTrackingFn = (index: number, row: any): any => {
       const idx = this.getRowIndex(row);
@@ -349,6 +375,34 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     this.scroller.setOffset(offset || 0);
   }
 
+  onFocusRowRequested(params: { type: 'prev' | 'next' }): void {
+    const rowIndex =
+      params.type === 'prev'
+        ? this.indexes.first - Math.ceil(this.pageSize * 0.5)
+        : this.indexes.first + Math.ceil(this.pageSize * 0.5);
+    this.scroller.setOffset(this.rowHeightsCache.query(rowIndex));
+  }
+
+  @HostListener('keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    const keyCode = event.keyCode;
+
+    const isAction = keyCode === Keys.pageUp || keyCode === Keys.pageDown;
+
+    if (isAction) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const rowIndex =
+        keyCode === Keys.pageUp
+          ? Math.max(0, this.indexes.first - this.pageSize)
+          : /*this.indexes.last - 2*/ this.indexes.first + this.pageSize - 2;
+      this.scroller.setOffset(this.rowHeightsCache.query(rowIndex));
+
+      this.elementRef.nativeElement.focus(); // preserve focus on table body for upcoming events
+    }
+  }
+
   /**
    * Body was scrolled, this is mainly useful for
    * when a user is server-side pagination via virtual scroll.
@@ -389,6 +443,14 @@ export class DataTableBodyComponent implements OnInit, OnDestroy {
     if (direction !== undefined && !isNaN(offset)) {
       this.page.emit({ offset });
     }
+  }
+
+  public detectChanges(): void {
+    this.cd.detectChanges();
+  }
+
+  public markForCheck(): void {
+    this.cd.markForCheck();
   }
 
   /**

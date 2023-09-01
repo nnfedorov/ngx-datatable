@@ -42,7 +42,7 @@ import { translateXY } from '../../utils/translate';
         [rowHeight]="rowHeight"
         [displayCheck]="displayCheck"
         [treeStatus]="treeStatus"
-        (activate)="onActivate($event, ii)"
+        (activate)="onActivate($event, ii, i)"
         (treeAction)="onTreeAction()"
       >
       </datatable-body-cell>
@@ -83,6 +83,8 @@ export class DataTableBodyRowComponent implements DoCheck {
   @Input() rowIndex: number;
   @Input() displayCheck: any;
   @Input() treeStatus: TreeStatus = 'collapsed';
+
+  @Input() hasScrollbarV?: boolean;
 
   @Input()
   set offsetX(val: number) {
@@ -194,15 +196,16 @@ export class DataTableBodyRowComponent implements DoCheck {
       const bodyWidth = parseInt(this.innerWidth + '', 0);
       const totalDiff = widths.total - bodyWidth;
       const offsetDiff = totalDiff - offsetX;
-      const offset = (offsetDiff + this.scrollbarHelper.width) * -1;
+      const offset = (offsetDiff + (this.hasScrollbarV ? this.scrollbarHelper.width : 0)) * -1;
       translateXY(styles, offset, 0);
     }
 
     return styles;
   }
 
-  onActivate(event: any, index: number): void {
+  onActivate(event: any, index: number, groupIndex: number): void {
     event.cellIndex = index;
+    event.groupIndex = groupIndex;
     event.rowElement = this._element;
     this.activate.emit(event);
   }

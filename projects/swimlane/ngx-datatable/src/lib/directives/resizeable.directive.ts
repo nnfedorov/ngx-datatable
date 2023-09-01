@@ -7,7 +7,8 @@ import {
   EventEmitter,
   OnDestroy,
   AfterViewInit,
-  Renderer2
+  Renderer2,
+  NgZone
 } from '@angular/core';
 import { Subscription, fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -30,7 +31,7 @@ export class ResizeableDirective implements OnDestroy, AfterViewInit {
   resizing: boolean = false;
   private resizeHandle: HTMLElement;
 
-  constructor(element: ElementRef, private renderer: Renderer2) {
+  constructor(element: ElementRef, private renderer: Renderer2, private ngZone: NgZone) {
     this.element = element.nativeElement;
   }
 
@@ -54,12 +55,12 @@ export class ResizeableDirective implements OnDestroy, AfterViewInit {
     }
   }
 
-  onMouseup(): void {
+  onMouseup(ignoreResize?: true): void {
     this.resizing = false;
 
     if (this.subscription && !this.subscription.closed) {
       this._destroySubscription();
-      this.resize.emit(this.element.clientWidth);
+      !ignoreResize && this.resize.emit(this.element.clientWidth);
     }
   }
 
@@ -74,13 +75,18 @@ export class ResizeableDirective implements OnDestroy, AfterViewInit {
       this.resizing = true;
 
       const mouseup = fromEvent(document, 'mouseup');
-      this.subscription = mouseup.subscribe((ev: MouseEvent) => this.onMouseup());
+      this.subscription = mouseup.subscribe(() => this.onMouseup());
 
-      const mouseMoveSub = fromEvent(document, 'mousemove')
-        .pipe(takeUntil(mouseup))
-        .subscribe((e: MouseEvent) => this.move(e, initialWidth, mouseDownScreenX));
+      this.ngZone.runOutsideAngular(() => {
+        const dragEndSub = fromEvent(document, 'dragend').subscribe(() => this.onMouseup(true));
+        this.subscription.add(dragEndSub);
 
-      this.subscription.add(mouseMoveSub);
+        const mouseMoveSub = fromEvent(document, 'mousemove')
+          .pipe(takeUntil(mouseup))
+          .subscribe((e: MouseEvent) => this.move(e, initialWidth, mouseDownScreenX));
+
+        this.subscription.add(mouseMoveSub);
+      });
     }
   }
 

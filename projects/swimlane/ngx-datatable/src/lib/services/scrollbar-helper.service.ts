@@ -11,7 +11,7 @@ export class ScrollbarHelper {
 
   constructor(@Inject(DOCUMENT) private document: any) {}
 
-  getWidth(): number {
+  private getWidth(): number {
     const outer = this.document.createElement('div');
     outer.style.visibility = 'hidden';
     outer.style.width = '100px';

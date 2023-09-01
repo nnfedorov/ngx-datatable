@@ -1,5 +1,6 @@
 import { PipeTransform } from '@angular/core';
 import { ValueGetter } from '../utils/column-prop-getters';
+import { SortDirection } from './sort-direction.type';
 
 /**
  * Column property that indicates how to retrieve this column's
@@ -216,4 +217,18 @@ export interface TableColumn {
    * @memberOf TableColumn
    */
   summaryTemplate?: any;
+
+  /**
+   * Is located after column being dragged
+   *
+   * @memberOf TableColumn
+   */
+  isAfterDragged?: boolean;
+
+  /**
+   * Is located after column being dragged
+   *
+   * @memberOf TableColumn
+   */
+  firstSortDir?: SortDirection;
 }

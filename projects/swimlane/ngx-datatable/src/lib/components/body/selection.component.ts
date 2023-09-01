@@ -10,6 +10,7 @@ export interface Model {
   rowElement: any;
   cellElement: any;
   cellIndex: number;
+  groupIndex: number;
 }
 
 @Component({
@@ -27,6 +28,7 @@ export class DataTableSelectionComponent {
 
   @Output() activate: EventEmitter<any> = new EventEmitter();
   @Output() select: EventEmitter<any> = new EventEmitter();
+  @Output() focusRowRequested: EventEmitter<{ type: 'prev' | 'next' }> = new EventEmitter();
 
   prevIndex: number;
 
@@ -36,11 +38,17 @@ export class DataTableSelectionComponent {
     const chkbox = this.selectionType === SelectionType.checkbox;
     const multi = this.selectionType === SelectionType.multi;
     const multiClick = this.selectionType === SelectionType.multiClick;
+    const cell = this.selectionType === SelectionType.cell;
     let selected: any[] = [];
 
-    if (multi || chkbox || multiClick) {
+    if (multi || chkbox || multiClick || cell) {
+      // allow rows multiselect for SelectionType.cell as well
       if (event.shiftKey) {
         selected = selectRowsBetween([], this.rows, index, this.prevIndex, this.getRowSelectedIdx.bind(this));
+        if (selected.some(r => !r)) {
+          // if some rows are not loaded - fallback to the single selection mode
+          selected = selectRows([], row, this.getRowSelectedIdx.bind(this));
+        }
       } else if (event.ctrlKey || event.metaKey || multiClick || chkbox) {
         selected = selectRows([...this.selected], row, this.getRowSelectedIdx.bind(this));
       } else {
@@ -91,14 +99,18 @@ export class DataTableSelectionComponent {
       if (!model.cellElement || !isCellSelection) {
         this.focusRow(model.rowElement, keyCode);
       } else if (isCellSelection) {
-        this.focusCell(model.cellElement, model.rowElement, keyCode, model.cellIndex);
+        this.focusCell(model.cellElement, model.rowElement, keyCode, model.cellIndex, model.groupIndex);
       }
     }
   }
 
   focusRow(rowElement: any, keyCode: number): void {
     const nextRowElement = this.getPrevNextRow(rowElement, keyCode);
-    if (nextRowElement) nextRowElement.focus();
+    if (nextRowElement) {
+      nextRowElement.focus();
+    } else {
+      this.focusRowRequested.emit({ type: keyCode === Keys.down ? 'next' : 'prev' });
+    }
   }
 
   getPrevNextRow(rowElement: any, keyCode: number): any {
@@ -118,18 +130,27 @@ export class DataTableSelectionComponent {
     }
   }
 
-  focusCell(cellElement: any, rowElement: any, keyCode: number, cellIndex: number): void {
+  focusCell(cellElement: any, rowElement: any, keyCode: number, cellIndex: number, groupIndex: number): void {
     let nextCellElement: HTMLElement;
 
     if (keyCode === Keys.left) {
       nextCellElement = cellElement.previousElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.previousElementSibling?.lastElementChild;
+      }
     } else if (keyCode === Keys.right) {
       nextCellElement = cellElement.nextElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.nextElementSibling?.firstElementChild;
+      }
     } else if (keyCode === Keys.up || keyCode === Keys.down) {
       const nextRowElement = this.getPrevNextRow(rowElement, keyCode);
       if (nextRowElement) {
-        const children = nextRowElement.getElementsByClassName('datatable-body-cell');
-        if (children.length) nextCellElement = children[cellIndex];
+        // const children = nextRowElement.getElementsByClassName('datatable-body-cell');
+        // if (children.length) nextCellElement = children[cellIndex];
+        nextCellElement = nextRowElement.children[groupIndex]?.children[cellIndex];
+      } else {
+        this.focusRowRequested.emit({ type: keyCode === Keys.down ? 'next' : 'prev' });
       }
     }
 
