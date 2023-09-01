@@ -170,7 +170,7 @@
       }
 
       &.is-drop-allowed {
-        border-color: #ff6a3c;
+        border-color: var(--primary-color, #ff6a3c);
       }
     }
 
