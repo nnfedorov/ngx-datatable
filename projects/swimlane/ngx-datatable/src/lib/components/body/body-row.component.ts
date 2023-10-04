@@ -184,20 +184,22 @@ export class DataTableBodyRowComponent implements DoCheck {
 
   calcStylesByGroup(group: string) {
     const widths = this._columnGroupWidths;
-    const offsetX = this.offsetX;
 
     const styles = {
       width: `${widths[group]}px`
-    };
+    } as any;
 
+    // #24653 use 'sticky' positioning to pin columns instead of transform
     if (group === 'left') {
-      translateXY(styles, offsetX, 0);
+      styles.position = 'sticky';
+      styles.top = 0;
+      styles.left = 0;
+      translateXY(styles, 0, 0);
     } else if (group === 'right') {
-      const bodyWidth = parseInt(this.innerWidth + '', 0);
-      const totalDiff = widths.total - bodyWidth;
-      const offsetDiff = totalDiff - offsetX;
-      const offset = (offsetDiff + (this.hasScrollbarV ? this.scrollbarHelper.width : 0)) * -1;
-      translateXY(styles, offset, 0);
+      styles.position = 'sticky';
+      styles.top = 0;
+      styles.right = 0;
+      translateXY(styles, 0, 0);
     }
 
     return styles;

@@ -1,5 +1,5 @@
 {
-  "extends": ["tslint-config-swimlane/base", "tslint-config-prettier"],
+  "extends": ["tslint-config-prettier"],
   "rules": {
     "deprecation": {
       "severity": "warning"
