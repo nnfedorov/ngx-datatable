@@ -970,7 +970,7 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     // This is because an expanded row is still considered to be a child of
     // the original row.  Hence calculation would use rowHeight only.
     if (this.scrollbarV && this.virtualization) {
-      const size = Math.ceil(this.bodyHeight / (this.rowHeight as number));
+      const size = Math.floor(this.bodyHeight / (this.rowHeight as number)); // #30048 use .floor() instead of .ceil()
       return Math.max(size, 0);
     }
 
