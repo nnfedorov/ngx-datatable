@@ -3,6 +3,7 @@
   z-index: 10;
   display: block;
   overflow: hidden;
+  outline: none;
 
   :host-context(ngx-datatable.scroll-horz) & {
     overflow-x: auto;

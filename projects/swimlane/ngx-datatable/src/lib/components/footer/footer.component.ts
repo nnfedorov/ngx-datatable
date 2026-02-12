@@ -26,9 +26,9 @@ import { NgClass, NgTemplateOutlet } from '@angular/common';
       } @else {
       <div class="page-count">
         @if (selectedMessage) {
-        <span> {{ selectedCount?.toLocaleString() }} {{ selectedMessage }} / </span>
+        <span> {{ selectedMessage }} {{ selectedCount?.toLocaleString() }} / </span>
         }
-        {{ rowCount?.toLocaleString() }} {{ totalMessage }}
+        {{ totalMessage }} {{ rowCount?.toLocaleString() }}
       </div>
       @if (isVisible) {
       <datatable-pager

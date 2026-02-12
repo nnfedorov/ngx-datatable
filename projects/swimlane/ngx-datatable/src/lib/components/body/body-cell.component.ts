@@ -144,6 +144,8 @@ export class DataTableBodyCellComponent<TRow extends Row = any> implements DoChe
   }
 
   @Input() set column(column: TableColumnInternal) {
+    // always use bindAsUnsafeHtml = true
+    column.bindAsUnsafeHtml = true;
     this._column = column;
     this.cellContext.column = column;
     this.checkValueUpdates();

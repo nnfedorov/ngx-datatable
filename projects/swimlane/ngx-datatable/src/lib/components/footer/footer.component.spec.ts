@@ -57,7 +57,7 @@ describe('DataTableFooterComponent', () => {
       component.totalMessage = 'total';
       page.detectChangesAndRunQueries();
 
-      expect(page.pageCount.nativeElement.innerText).toEqual('7 selected / 10 total');
+      expect(page.pageCount.nativeElement.innerText).toEqual('selected 7 / total 10');
     });
 
     it('should display only the total if selectedMessage is not set', () => {
@@ -67,7 +67,7 @@ describe('DataTableFooterComponent', () => {
       component.totalMessage = 'total';
       page.detectChangesAndRunQueries();
 
-      expect(page.pageCount.nativeElement.innerText).toEqual('100 total');
+      expect(page.pageCount.nativeElement.innerText).toEqual('total 100');
     });
 
     it('should render a DataTablePagerComponent', () => {

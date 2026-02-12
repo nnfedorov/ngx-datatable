@@ -174,6 +174,7 @@ export class DatatableComponent<TRow extends Row = any>
     if (val) {
       this._internalColumns = toInternalColumn(val, this._defaultColumnWidth);
       this.recalculateColumns();
+      this.validateScrollLeft();
     }
 
     this._columns = val;
@@ -210,6 +211,9 @@ export class DatatableComponent<TRow extends Row = any>
    * Enable horz scrollbars
    */
   @Input({ transform: booleanAttribute }) scrollbarH = false;
+
+  @Input({ transform: booleanAttribute }) touchScrollV = true;
+  @Input({ transform: booleanAttribute }) touchScrollH = true;
 
   /**
    * The row height; which is necessary
@@ -339,7 +343,7 @@ export class DatatableComponent<TRow extends Row = any>
    * Swap columns on re-order columns or
    * move them.
    */
-  @Input({ transform: booleanAttribute }) swapColumns = true;
+  @Input({ transform: booleanAttribute }) swapColumns = false;
 
   /**
    * The type of sorting
@@ -709,6 +713,17 @@ export class DatatableComponent<TRow extends Row = any>
   // this will be set to true once rows are available and rendered on UI
   private _rowInitDone = signal(false);
 
+  private get scrollerParent(): HTMLElement | undefined {
+    return this.bodyComponent?.scroller?.parentElement;
+  }
+
+  scrollBodyHorizontallyFn = (delta: number) => {
+    const scrollerParent = this.scrollerParent;
+    if (scrollerParent) {
+      scrollerParent.scrollLeft += delta;
+    }
+  };
+
   constructor() {
     // apply global settings from Module.forRoot
     if (this.configuration) {
@@ -901,6 +916,7 @@ export class DatatableComponent<TRow extends Row = any>
   @throttleable(5)
   onWindowResize(): void {
     this.recalculate();
+    setTimeout(() => this.validateScrollLeft());
   }
 
   /**
@@ -949,6 +965,18 @@ export class DatatableComponent<TRow extends Row = any>
     return columns;
   }
 
+  private validateScrollLeft(): void {
+    const element = this.scrollerParent;
+    if (!element || element.scrollLeft === 0) {
+      return;
+    }
+
+    const columnsWidth = this._internalColumns.reduce((w, c) => w + c.width, 0);
+    if (columnsWidth < element.scrollLeft + element.clientWidth) {
+      // scroll to the left in order to get rid of the gap after the last column
+      element.scrollLeft = Math.max(columnsWidth - element.clientWidth, 0);
+    }
+  }
   /**
    * Recalculates the dimensions of the table size.
    * Internally calls the page size and row count calcs too.
@@ -1043,7 +1071,7 @@ export class DatatableComponent<TRow extends Row = any>
     // This is because an expanded row is still considered to be a child of
     // the original row.  Hence calculation would use rowHeight only.
     if (this.scrollbarV && this.virtualization) {
-      const size = Math.ceil(this.bodyHeight / (this.rowHeight as number));
+      const size = Math.floor(this.bodyHeight / (this.rowHeight as number));
       return Math.max(size, 0);
     }
 

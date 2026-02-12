@@ -21,6 +21,25 @@
   &.longpress .datatable-header-cell-wrapper {
     cursor: move;
   }
+
+  .reorder-drop-slot {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    //background: linear-gradient(to left, white, #ffaf95 5px, white 10px, transparent 10px);
+    border-left: 5px dotted transparent;
+    &_after {
+      border-left: none;
+      border-right: 5px dotted transparent;
+    }
+
+    &.is-drop-allowed {
+      border-color: var(--primary-color, #ff6a3c);
+    }
+  }
 }
 
 .datatable-header-cell-template-wrap {

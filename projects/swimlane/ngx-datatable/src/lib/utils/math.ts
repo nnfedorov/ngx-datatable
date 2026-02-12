@@ -124,7 +124,9 @@ export function forceFillColumnWidths(
 ) {
   const columnsToResize = allColumns
     .slice(startIdx + 1, allColumns.length)
-    .filter(c => c.canAutoResize !== false);
+    .filter(c => c.canAutoResize !== false && !c.isFiller);
+
+  const fillerColumns = allColumns.filter(c => !!c.isFiller);
 
   for (const column of columnsToResize) {
     if (!column.$$oldWidth) {
@@ -170,6 +172,29 @@ export function forceFillColumnWidths(
     remainingWidth = expectedWidth - contentWidth;
     removeProcessedColumns(columnsToResize, columnsProcessed);
   } while (remainingWidth > remainingWidthLimit && columnsToResize.length !== 0);
+
+  // If there's leftover space, and we have filler columns — give it to them
+  if (remainingWidth > 0 && fillerColumns.length > 0) {
+    const perFiller = remainingWidth / fillerColumns.length;
+    for (const f of fillerColumns) {
+      const newWidth = (f.width || defaultColWidth) + perFiller;
+      f.width = Math.max(f.minWidth ?? 0, newWidth);
+    }
+    remainingWidth = 0;
+  } else if (remainingWidth < 0 && fillerColumns.length > 0) {
+    // try to shrink fillers first (not below minWidth)
+    for (const f of fillerColumns) {
+      if (remainingWidth === 0) {
+        break;
+      }
+      const availableToReduce = (f.width || 0) - (f.minWidth ?? 0);
+      if (availableToReduce > 0) {
+        const reduce = Math.min(availableToReduce, -remainingWidth);
+        f.width -= reduce;
+        remainingWidth += reduce; // move the remainingWidth towards 0
+      }
+    }
+  }
 
   // reset so we don't have stale values
   for (const column of columnsToResize) {

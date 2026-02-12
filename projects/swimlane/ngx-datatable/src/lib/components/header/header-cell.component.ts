@@ -8,6 +8,7 @@ import {
   HostListener,
   inject,
   Input,
+  NgZone,
   OnDestroy,
   OnInit,
   Output,
@@ -25,11 +26,17 @@ import { NgTemplateOutlet } from '@angular/common';
 import { InnerSortEvent, TableColumnInternal } from '../../types/internal.types';
 import { fromEvent, Subscription, takeUntil } from 'rxjs';
 import { getPositionFromEvent } from '../../utils/events';
+import { SlotDropDirective } from '../../directives/dnd/slot-drop.directive';
 
 @Component({
   selector: 'datatable-header-cell',
   template: `
-    <div class="datatable-header-cell-template-wrap">
+    <div
+      class="datatable-header-cell-template-wrap"
+      [draggable]="reorderable"
+      (dragstart)="dragStart.emit()"
+      (dragend)="dragEnd.emit()"
+    >
       @if (isTarget) {
       <ng-template
         [ngTemplateOutlet]="targetMarkerTemplate!"
@@ -48,12 +55,21 @@ import { getPositionFromEvent } from '../../utils/events';
       </ng-template>
       } @else {
       <span class="datatable-header-cell-wrapper">
-        <span class="datatable-header-cell-label draggable" (click)="onSort()">
+        <span class="datatable-header-cell-label draggable" (click)="onSort($event)">
           {{ name }}
         </span>
       </span>
       }
-      <span (click)="onSort()" [class]="sortClass"> </span>
+      <span (click)="onSort($event)" [class]="sortClass"> </span>
+
+      @if (draggedColumn && draggedColumn !== column && column.draggable) {
+      <div
+        class="reorder-drop-slot"
+        [class.reorder-drop-slot_after]="column.isAfterDragged"
+        [slotAllowDrop]="true"
+        (slotDrop)="dropped.emit()"
+      ></div>
+      }
     </div>
     @if (column.resizeable) {
     <span
@@ -69,10 +85,11 @@ import { getPositionFromEvent } from '../../utils/events';
   },
   styleUrl: './header-cell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet]
+  imports: [NgTemplateOutlet, SlotDropDirective]
 })
 export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
   private cd = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
 
   @Input() sortType!: SortType;
   @Input() sortAscendingIcon?: string;
@@ -121,6 +138,13 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
   get sorts(): SortPropDir[] {
     return this._sorts;
   }
+
+  @Input() reorderable?: boolean;
+  @Input() draggedColumn?: any;
+
+  @Output() dragStart = new EventEmitter<void>();
+  @Output() dragEnd = new EventEmitter<void>();
+  @Output() dropped = new EventEmitter<void>();
 
   @Output() sort = new EventEmitter<InnerSortEvent>();
   @Output() select = new EventEmitter<void>();
@@ -257,13 +281,13 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
   }
   // Counter to reset sort once user sort asc and desc.
   private totalSortStatesApplied = 0;
-  onSort(): void {
+  onSort(event?: MouseEvent): void {
     if (!this.column.sortable) {
       return;
     }
 
     this.totalSortStatesApplied++;
-    let newValue = nextSortDir(this.sortType, this.sortDir);
+    let newValue = nextSortDir(this.sortType, this.sortDir, event, this.column.firstSortDir);
     // User has done both direction sort so we reset the next sort.
     if (this.enableClearingSortState && this.totalSortStatesApplied === 3) {
       newValue = undefined;
@@ -272,7 +296,8 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
     this.sort.emit({
       column: this.column,
       prevValue: this.sortDir,
-      newValue
+      newValue,
+      event
     });
   }
 
@@ -298,20 +323,27 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
     const mouseup = fromEvent<MouseEvent | TouchEvent>(document, isMouse ? 'mouseup' : 'touchend');
     this.subscription = mouseup.subscribe(() => this.onMouseup());
 
-    const mouseMoveSub = fromEvent<MouseEvent | TouchEvent>(
-      document,
-      isMouse ? 'mousemove' : 'touchmove'
-    )
-      .pipe(takeUntil(mouseup))
-      .subscribe((e: MouseEvent | TouchEvent) => this.move(e, initialWidth, screenX));
+    this.ngZone.runOutsideAngular(() => {
+      const dragEndSub = fromEvent(document, 'dragend').subscribe(() => this.onMouseup(true));
+      this.subscription.add(dragEndSub);
 
-    this.subscription.add(mouseMoveSub);
+      const mouseMoveSub = fromEvent<MouseEvent | TouchEvent>(
+        document,
+        isMouse ? 'mousemove' : 'touchmove'
+      )
+        .pipe(takeUntil(mouseup))
+        .subscribe((e: MouseEvent | TouchEvent) => this.move(e, initialWidth, screenX));
+
+      this.subscription.add(mouseMoveSub);
+    });
   }
 
-  private onMouseup(): void {
+  private onMouseup(ignoreResize?: true): void {
     if (this.subscription && !this.subscription.closed) {
       this.destroySubscription();
-      this.resize.emit({ width: this.element.clientWidth, column: this.column });
+      if (!ignoreResize) {
+        this.resize.emit({ width: this.element.clientWidth, column: this.column });
+      }
     }
   }
 

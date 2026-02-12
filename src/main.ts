@@ -18,7 +18,7 @@ bootstrapApplication(AppComponent, {
       messages: {
         emptyMessage: 'No data to display', // Message to show when array is presented, but contains no values
         totalMessage: 'total', // Footer total message
-        selectedMessage: 'selected', // Footer selected message
+        selectedMessage: '', // Footer selected message
         ariaFirstPageMessage: 'go to first page', // Pager screen reader message for the first page button
         ariaPreviousPageMessage: 'go to previous page', // Pager screen reader message for the previous page button
         ariaPageNMessage: 'page', // Pager screen reader message for the n-th page button

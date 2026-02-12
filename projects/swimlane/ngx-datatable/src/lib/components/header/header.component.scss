@@ -3,6 +3,24 @@
 :host {
   display: block;
   overflow: hidden;
+  position: relative;
+
+  /* Header scroll helper */
+  .scroll-helper {
+    position: absolute;
+    z-index: 10; /* place helper above frozen columns */
+    height: 100%;
+    top: 0;
+    width: 30px;
+
+    &_left {
+      left: 0;
+    }
+
+    &_right {
+      right: 0;
+    }
+  }
 }
 
 .datatable-header-inner {

@@ -3,8 +3,10 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
+  ElementRef,
   EventEmitter,
   HostBinding,
+  HostListener,
   inject,
   Input,
   OnDestroy,
@@ -40,7 +42,11 @@ import { DataTableSummaryRowComponent } from './summary/summary-row.component';
 import { DataTableGhostLoaderComponent } from './ghost-loader/ghost-loader.component';
 import { DatatableBodyRowDirective } from './body-row.directive';
 import { selectRows, selectRowsBetween } from '../../utils/selection';
+import { isFF, isMS } from '../../utils/facade/browser';
 import { Keys } from '../../utils/keys';
+
+const FF_MAX_HEIGHT = 8947840;
+const MS_MAX_HEIGHT = 10737418;
 
 @Component({
   selector: 'datatable-body',
@@ -66,6 +72,8 @@ import { Keys } from '../../utils/keys';
       <datatable-scroller
         [scrollbarV]="scrollbarV"
         [scrollbarH]="scrollbarH"
+        [touchScrollV]="touchScrollV"
+        [touchScrollH]="touchScrollH"
         [scrollHeight]="scrollHeight()"
         [scrollWidth]="columnGroupWidths?.total"
         (scroll)="onBodyScroll($event)"
@@ -93,6 +101,7 @@ import { Keys } from '../../utils/keys';
             tabindex="-1"
             #rowElement
             [disabled]="disabled"
+            [hasScrollbarV]="hasScrollbarV"
             [isSelected]="getRowSelected(row)"
             [innerWidth]="innerWidth"
             [columns]="columns"
@@ -235,10 +244,13 @@ import { Keys } from '../../utils/keys';
 })
 export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, OnDestroy {
   cd = inject(ChangeDetectorRef);
+  elementRef = inject(ElementRef);
 
   @Input() rowDefTemplate?: TemplateRef<any>;
   @Input() scrollbarV?: boolean;
   @Input() scrollbarH?: boolean;
+  @Input() touchScrollV?: boolean;
+  @Input() touchScrollH?: boolean;
   @Input() loadingIndicator?: boolean;
   @Input() ghostLoadingIndicator?: boolean;
   @Input() externalPaging?: boolean;
@@ -264,6 +276,8 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
   @Input() rowDraggable?: boolean;
   @Input() rowDragEvents!: EventEmitter<DragEventData>;
   @Input() disableRowCheck?: (row: TRow) => boolean | undefined;
+
+  @Input() hasScrollbarV?: boolean;
 
   @Input() set pageSize(val: number) {
     if (val !== this._pageSize) {
@@ -354,6 +368,9 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
 
   @Input() verticalScrollVisible = false;
 
+  @HostBinding('tabindex')
+  tabIndex = -1;
+
   @Output() scroll = new EventEmitter<ScrollEvent>();
   @Output() page = new EventEmitter<number>();
   @Output() activate = new EventEmitter<ActivateEvent<TRow>>();
@@ -375,9 +392,18 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
    * based on the row heights cache for virtual scroll and virtualization. Other scenarios
    * calculate scroll height automatically (as height will be undefined).
    */
+
   scrollHeight = computed(() => {
     if (this.rowHeightsCache() && this.scrollbarV && this.virtualization && this.rowCount) {
-      return this.rowHeightsCache().query(this.rowCount - 1);
+      let height = this.rowHeightsCache().query(this.rowCount - 1);
+      if (height > FF_MAX_HEIGHT) {
+        if (isFF) {
+          height = FF_MAX_HEIGHT;
+        } else if (height > MS_MAX_HEIGHT && isMS) {
+          height = MS_MAX_HEIGHT;
+        }
+      }
+      return height;
     }
     // avoid TS7030: Not all code paths return a value.
     return undefined;
@@ -486,6 +512,34 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
     this.scroller.setOffset(offset || 0);
   }
 
+  focusRowRequested(params: { type: 'prev' | 'next' }): void {
+    const rowIndex =
+      params.type === 'prev'
+        ? this.indexes().first - Math.ceil(this.pageSize * 0.5)
+        : this.indexes().first + Math.ceil(this.pageSize * 0.5);
+    this.scroller.setOffset(this.rowHeightsCache().query(rowIndex));
+  }
+
+  @HostListener('keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    const isAction = key === Keys.pageUp || key === Keys.pageDown;
+
+    if (isAction) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const rowIndex =
+        key === Keys.pageUp
+          ? Math.max(0, this.indexes().first - this.pageSize)
+          : /*this.indexes.last - 2*/ this.indexes().first + this.pageSize - 2;
+      this.scroller.setOffset(this.rowHeightsCache().query(rowIndex));
+
+      this.elementRef.nativeElement.focus(); // preserve focus on table body for upcoming events
+    }
+  }
+
   /**
    * Body was scrolled, this is mainly useful for
    * when a user is server-side pagination via virtual scroll.
@@ -539,6 +593,14 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
       }
       this.page.emit(offset);
     }
+  }
+
+  public detectChanges(): void {
+    this.cd.detectChanges();
+  }
+
+  public markForCheck(): void {
+    this.cd.markForCheck();
   }
 
   /**
@@ -879,12 +941,18 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
     const chkbox = this.selectionType === SelectionType.checkbox;
     const multi = this.selectionType === SelectionType.multi;
     const multiClick = this.selectionType === SelectionType.multiClick;
+    const cell = this.selectionType === SelectionType.cell;
     let selected: TRow[] = [];
 
     // TODO: this code needs cleanup. Casting it to KeyboardEvent is not correct as it could also be other types.
-    if (multi || chkbox || multiClick) {
+    if (multi || chkbox || multiClick || cell) {
+      // allow rows multiselect for SelectionType.cell as well
       if ((event as KeyboardEvent).shiftKey) {
         selected = selectRowsBetween([], this.rows, index, this.prevIndex!);
+        if (selected.some(r => !r)) {
+          // if some rows are not loaded - fallback to the single selection mode
+          selected = selectRows([], row, this.getRowSelectedIdx.bind(this));
+        }
       } else if (
         (event as KeyboardEvent).key === 'a' &&
         ((event as KeyboardEvent).ctrlKey || (event as KeyboardEvent).metaKey)
@@ -962,7 +1030,7 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
       if (!model.cellElement || !isCellSelection) {
         this.focusRow(model.rowElement, key);
       } else if (isCellSelection && model.cellIndex !== undefined) {
-        this.focusCell(model.cellElement, model.rowElement, key, model.cellIndex);
+        this.focusCell(model.cellElement, model.rowElement, key, model.cellIndex, model.groupIndex);
       }
     }
   }
@@ -971,6 +1039,8 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
     const nextRowElement = this.getPrevNextRow(rowElement, key);
     if (nextRowElement) {
       nextRowElement.focus();
+    } else {
+      this.focusRowRequested({ type: key === Keys.down ? 'next' : 'prev' });
     }
   }
 
@@ -991,20 +1061,35 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
     }
   }
 
-  focusCell(cellElement: HTMLElement, rowElement: HTMLElement, key: Keys, cellIndex: number): void {
+  focusCell(
+    cellElement: HTMLElement,
+    rowElement: HTMLElement,
+    key: Keys,
+    cellIndex: number,
+    groupIndex: number
+  ): void {
     let nextCellElement: Element | null = null;
 
     if (key === Keys.left) {
       nextCellElement = cellElement.previousElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.previousElementSibling?.lastElementChild;
+      }
     } else if (key === Keys.right) {
       nextCellElement = cellElement.nextElementSibling;
+      if (!nextCellElement) {
+        nextCellElement = cellElement.parentElement.nextElementSibling?.firstElementChild;
+      }
     } else if (key === Keys.up || key === Keys.down) {
       const nextRowElement = this.getPrevNextRow(rowElement, key);
       if (nextRowElement) {
-        const children = nextRowElement.getElementsByClassName('datatable-body-cell');
-        if (children.length) {
-          nextCellElement = children[cellIndex];
-        }
+        // const children = nextRowElement.getElementsByClassName('datatable-body-cell');
+        // if (children.length) {
+        //   nextCellElement = children[cellIndex];
+        // }
+        nextCellElement = nextRowElement.children[groupIndex]?.children[cellIndex];
+      } else {
+        this.focusRowRequested({ type: key === Keys.down ? 'next' : 'prev' });
       }
     }
 
