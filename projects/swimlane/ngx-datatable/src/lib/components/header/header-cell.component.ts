@@ -8,7 +8,6 @@ import {
   HostListener,
   inject,
   Input,
-  NgZone,
   OnDestroy,
   OnInit,
   Output,
@@ -89,7 +88,6 @@ import { SlotDropDirective } from '../../directives/dnd/slot-drop.directive';
 })
 export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
   private cd = inject(ChangeDetectorRef);
-  private ngZone = inject(NgZone);
 
   @Input() sortType!: SortType;
   @Input() sortAscendingIcon?: string;
@@ -323,19 +321,14 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
     const mouseup = fromEvent<MouseEvent | TouchEvent>(document, isMouse ? 'mouseup' : 'touchend');
     this.subscription = mouseup.subscribe(() => this.onMouseup());
 
-    this.ngZone.runOutsideAngular(() => {
-      const dragEndSub = fromEvent(document, 'dragend').subscribe(() => this.onMouseup(true));
-      this.subscription.add(dragEndSub);
+    const mouseMoveSub = fromEvent<MouseEvent | TouchEvent>(
+      document,
+      isMouse ? 'mousemove' : 'touchmove'
+    )
+      .pipe(takeUntil(mouseup))
+      .subscribe((e: MouseEvent | TouchEvent) => this.move(e, initialWidth, screenX));
 
-      const mouseMoveSub = fromEvent<MouseEvent | TouchEvent>(
-        document,
-        isMouse ? 'mousemove' : 'touchmove'
-      )
-        .pipe(takeUntil(mouseup))
-        .subscribe((e: MouseEvent | TouchEvent) => this.move(e, initialWidth, screenX));
-
-      this.subscription.add(mouseMoveSub);
-    });
+    this.subscription.add(mouseMoveSub);
   }
 
   private onMouseup(ignoreResize?: true): void {
