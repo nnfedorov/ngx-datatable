@@ -5,6 +5,7 @@
 // components
 export * from './lib/ngx-datatable.module';
 export * from './lib/components/datatable.component';
+export * from './lib/components/footer/pager.component';
 export * from './lib/components/body/body-group-header.directive';
 export * from './lib/components/body/body-group-header-template.directive';
 export * from './lib/components/footer/footer.directive';

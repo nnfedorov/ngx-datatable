@@ -8,6 +8,8 @@ import { DatatableRowDetailTemplateDirective } from './components/row-detail/row
 import { DataTableColumnHeaderDirective } from './components/columns/column-header.directive';
 import { DataTableColumnCellDirective } from './components/columns/column-cell.directive';
 import { DataTableColumnGhostCellDirective } from './components/columns/column-ghost-cell.directive';
+import { DragOverListenerDirective } from './directives/dnd/drag-over-listener.directive';
+import { SlotDropDirective } from './directives/dnd/slot-drop.directive';
 import { DataTableColumnCellTreeToggle } from './components/columns/tree.directive';
 import { DatatableFooterDirective } from './components/footer/footer.directive';
 import { DatatableGroupHeaderTemplateDirective } from './components/body/body-group-header-template.directive';
@@ -17,11 +19,13 @@ import {
   DatatableRowDefDirective
 } from './components/body/body-row-def.component';
 import { AllPartial, NgxDatatableConfig, providedNgxDatatableConfig } from './ngx-datatable.config';
+import { DataTablePagerComponent } from './components/footer/pager.component';
 
 @NgModule({
   imports: [
     DataTableFooterTemplateDirective,
     DatatableComponent,
+    DataTablePagerComponent,
     DataTableColumnDirective,
     DatatableRowDetailDirective,
     DatatableGroupHeaderDirective,
@@ -29,6 +33,8 @@ import { AllPartial, NgxDatatableConfig, providedNgxDatatableConfig } from './ng
     DataTableColumnHeaderDirective,
     DataTableColumnCellDirective,
     DataTableColumnGhostCellDirective,
+    DragOverListenerDirective,
+    SlotDropDirective,
     DataTableColumnCellTreeToggle,
     DatatableFooterDirective,
     DatatableGroupHeaderTemplateDirective,
@@ -38,6 +44,7 @@ import { AllPartial, NgxDatatableConfig, providedNgxDatatableConfig } from './ng
   ],
   exports: [
     DatatableComponent,
+    DataTablePagerComponent,
     DatatableRowDetailDirective,
     DatatableGroupHeaderDirective,
     DatatableRowDetailTemplateDirective,

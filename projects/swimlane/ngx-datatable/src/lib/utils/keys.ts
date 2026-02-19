@@ -4,5 +4,7 @@ export enum Keys {
   return = 'Enter',
   escape = 'Escape',
   left = 'ArrowLeft',
-  right = 'ArrowRight'
+  right = 'ArrowRight',
+  pageUp = 'PageUp',
+  pageDown = 'PageDown'
 }

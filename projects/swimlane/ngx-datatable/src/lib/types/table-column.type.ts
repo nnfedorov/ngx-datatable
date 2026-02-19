@@ -1,5 +1,5 @@
 import { PipeTransform, TemplateRef } from '@angular/core';
-import { CellContext, HeaderCellContext, Row } from './public.types';
+import { CellContext, HeaderCellContext, Row, SortDirection } from './public.types';
 
 /**
  * Column property that indicates how to retrieve this column's
@@ -174,4 +174,25 @@ export interface TableColumn<TRow extends Row = any> {
    * Summary cell template ref
    */
   summaryTemplate?: TemplateRef<any>;
+
+  /**
+   * Is located after column being dragged
+   *
+   * @memberOf TableColumn
+   */
+  isAfterDragged?: boolean;
+
+  /**
+   * Is located after column being dragged
+   *
+   * @memberOf TableColumn
+   */
+  firstSortDir?: SortDirection;
+
+  /**
+   * Mark column as filler — used to absorb leftover horizontal space.
+   * If true, filler columns are excluded from the normal proportional
+   * distribution and get assigned remaining width at the end.
+   */
+  isFiller?: boolean;
 }

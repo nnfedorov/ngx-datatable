@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
   HostBinding,
+  HostListener,
   inject,
   Input,
   OnChanges,
@@ -36,6 +38,7 @@ import { DraggableDirective } from '../../directives/draggable.directive';
 import { LongPressDirective } from '../../directives/long-press.directive';
 import { DataTableHeaderCellComponent } from './header-cell.component';
 import { OrderableDirective } from '../../directives/orderable.directive';
+import { DragOverListenerDirective } from '../../directives/dnd/drag-over-listener.directive';
 
 @Component({
   selector: 'datatable-header',
@@ -81,6 +84,11 @@ import { OrderableDirective } from '../../directives/orderable.directive';
           [sortDescendingIcon]="sortDescendingIcon"
           [sortUnsetIcon]="sortUnsetIcon"
           [allRowsSelected]="allRowsSelected"
+          [reorderable]="reorderable && column.draggable"
+          [draggedColumn]="draggedColumn"
+          (dragStart)="onColumnDragStart(column)"
+          (dragEnd)="onColumnDragEnd(column)"
+          (dropped)="onColumnDropped(column)"
           [enableClearingSortState]="enableClearingSortState"
           (sort)="onSort($event)"
           (select)="select.emit($event)"
@@ -89,7 +97,15 @@ import { OrderableDirective } from '../../directives/orderable.directive';
         </datatable-header-cell>
         }
       </div>
-      } }
+      } } @if (scrollbarH && reorderable && draggedColumn) {
+      <ng-container>
+        <div class="scroll-helper scroll-helper_left" [dragOverListener]="leftDragOverLister"></div>
+        <div
+          class="scroll-helper scroll-helper_right"
+          [dragOverListener]="rightDragOverLister"
+        ></div>
+      </ng-container>
+      }
     </div>
   `,
   host: {
@@ -103,11 +119,13 @@ import { OrderableDirective } from '../../directives/orderable.directive';
     DataTableHeaderCellComponent,
     LongPressDirective,
     DraggableDirective,
-    NgClass
+    NgClass,
+    DragOverListenerDirective
   ]
 })
 export class DataTableHeaderComponent implements OnDestroy, OnChanges {
   private cd = inject(ChangeDetectorRef);
+  private elementRef = inject(ElementRef);
   private scrollbarHelper = inject(ScrollbarHelper);
 
   @Input() sortAscendingIcon?: string;
@@ -139,6 +157,8 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
   @Input() selectionType?: SelectionType;
   @Input() reorderable?: boolean;
   @Input() verticalScrollVisible = false;
+
+  @Input() scrollBodyHorizontallyFn: (delta: number) => void;
 
   dragEventTarget?: MouseEvent | TouchEvent;
 
@@ -205,6 +225,15 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
   } = { left: {}, center: {}, right: {} };
 
   private destroyed = false;
+
+  @HostListener('contextmenu', ['$event'])
+  onContextmenu($event: MouseEvent): void {
+    // fire event only when it comes from header element itself,
+    // otherwise it will be fired in header cell
+    if ($event.target === this.elementRef.nativeElement) {
+      this.columnContextmenu.emit({ event: $event, column: null });
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.verticalScrollVisible) {
@@ -304,6 +333,10 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
         };
       }
     }
+
+    if (!this.destroyed) {
+      this.cd.detectChanges();
+    }
   }
 
   getColumn(index: number): any {
@@ -320,13 +353,13 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
     return this._columnsByPin[2].columns[index - leftColumnCount - centerColumnCount];
   }
 
-  onSort({ column, prevValue, newValue }: InnerSortEvent): void {
+  onSort({ column, prevValue, newValue, event }: InnerSortEvent): void {
     // if we are dragging don't sort!
     if (column.dragging) {
       return;
     }
 
-    const sorts = this.calcNewSorts(column, prevValue, newValue);
+    const sorts = this.calcNewSorts(column, prevValue, newValue, event);
     this.sort.emit({
       sorts,
       column,
@@ -338,7 +371,8 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
   calcNewSorts(
     column: SortableTableColumnInternal,
     prevValue: SortDirection | undefined,
-    newValue: SortDirection | undefined
+    newValue: SortDirection | undefined,
+    event: MouseEvent
   ): SortPropDir[] {
     let idx = 0;
 
@@ -354,12 +388,18 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
       return s;
     });
 
+    const multiToSkipType = this.sortType === SortType.multi && event && !event.ctrlKey; // "multi" mode without Ctrl
+    // should work as "single" one
     if (newValue === undefined) {
       sorts.splice(idx, 1);
-    } else if (prevValue) {
+    } else if (prevValue && !multiToSkipType) {
       sorts[idx].dir = newValue;
     } else {
-      if (this.sortType === SortType.single) {
+      if (
+        this.sortType === SortType.single ||
+        this.sortType === SortType.singleResettable ||
+        multiToSkipType
+      ) {
         sorts.splice(0, this.sorts.length);
       }
 
@@ -380,17 +420,56 @@ export class DataTableHeaderComponent implements OnDestroy, OnChanges {
 
   calcStylesByGroup(group: 'center' | 'right' | 'left'): NgStyle['ngStyle'] {
     const widths = this._columnGroupWidths;
-
     if (group === 'center') {
       return {
         transform: `translateX(${this.offsetX * -1}px)`,
         width: `${widths[group]}px`,
-        willChange: 'transform'
+        willChange: 'transform',
+        zIndex: 0
       };
     }
 
     return {
-      width: `${widths[group]}px`
+      width: `${widths[group]}px`,
+      position: 'sticky',
+      top: '0px',
+      zIndex: 9,
+      transform: 'translateZ(0)',
+      willChange: 'transform'
     };
+  }
+
+  /***** Reorder *****/
+  draggedColumn?: any;
+
+  leftDragOverLister = () => this.scrollBodyHorizontallyFn(-75);
+  rightDragOverLister = () => this.scrollBodyHorizontallyFn(75);
+
+  onColumnDragStart(column: any): void {
+    this.draggedColumn = column;
+    const draggedIndex = this.columns.indexOf(column);
+    this.columns.forEach((c, i) => (c.isAfterDragged = i > draggedIndex));
+  }
+
+  onColumnDragEnd(column: any): void {
+    this.draggedColumn = undefined;
+    this.columns.forEach((c, i) => delete c.isAfterDragged);
+
+    if (!this.destroyed) {
+      this.cd.detectChanges();
+    }
+  }
+
+  onColumnDropped(targetColumn: any): void {
+    if (!this.draggedColumn) {
+      return;
+    }
+    this.reorder.emit({
+      column: this.draggedColumn,
+      prevValue: this.columns.indexOf(this.draggedColumn),
+      newValue: this.columns.indexOf(targetColumn)
+    });
+
+    this.onColumnDragEnd(this.draggedColumn);
   }
 }

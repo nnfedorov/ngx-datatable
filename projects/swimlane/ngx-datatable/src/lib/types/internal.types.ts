@@ -49,6 +49,7 @@ export interface InnerSortEvent {
   column: SortableTableColumnInternal;
   prevValue: SortDirection | undefined;
   newValue: SortDirection | undefined;
+  event?: MouseEvent;
 }
 
 export interface CellActiveEvent<TRow> {
