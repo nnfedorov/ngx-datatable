@@ -105,7 +105,6 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
   @Input() treeStatus?: TreeStatus = 'collapsed';
   @Input() verticalScrollVisible = false;
 
-  @Input() hasScrollbarV?: boolean;
   @Input() disabled?: boolean;
 
   @HostBinding('class')

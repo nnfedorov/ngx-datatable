@@ -101,7 +101,6 @@ const MS_MAX_HEIGHT = 10737418;
             tabindex="-1"
             #rowElement
             [disabled]="disabled"
-            [hasScrollbarV]="hasScrollbarV"
             [isSelected]="getRowSelected(row)"
             [innerWidth]="innerWidth"
             [columns]="columns"
@@ -276,8 +275,6 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
   @Input() rowDraggable?: boolean;
   @Input() rowDragEvents!: EventEmitter<DragEventData>;
   @Input() disableRowCheck?: (row: TRow) => boolean | undefined;
-
-  @Input() hasScrollbarV?: boolean;
 
   @Input() set pageSize(val: number) {
     if (val !== this._pageSize) {
