@@ -15,7 +15,6 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import { NgStyle } from '@angular/common';
 
 import { columnGroupWidths, columnsByPin, columnsByPinArr } from '../../utils/column';
 import { Keys } from '../../utils/keys';
@@ -28,7 +27,6 @@ import {
   TableColumnInternal
 } from '../../types/internal.types';
 import { DataTableBodyCellComponent } from './body-cell.component';
-import { translateXY } from '../../utils/translate';
 
 @Component({
   selector: 'datatable-body-row',
@@ -39,7 +37,6 @@ import { translateXY } from '../../utils/translate';
     <div
       class="datatable-row-{{ colGroup.type }} datatable-row-group"
       [style.width.px]="_columnGroupWidths[colGroup.type]"
-      [ngStyle]="_groupStyles[colGroup.type]"
       [class.row-disabled]="disabled"
     >
       @for (column of colGroup.columns; track column.$$id; let ii = $index) {
@@ -65,7 +62,7 @@ import { translateXY } from '../../utils/translate';
     } }
   `,
   styleUrl: './body-row.component.scss',
-  imports: [DataTableBodyCellComponent, NgStyle]
+  imports: [DataTableBodyCellComponent]
 })
 export class DataTableBodyRowComponent<TRow extends Row = any> implements DoCheck, OnChanges {
   private cd = inject(ChangeDetectorRef);
@@ -73,7 +70,6 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
   @Input() set columns(val: TableColumnInternal[]) {
     this._columns = val;
     this.recalculateColumns(val);
-    this.buildStylesByGroup();
   }
 
   get columns(): TableColumnInternal[] {
@@ -88,7 +84,6 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
 
     this._innerWidth = val;
     this.recalculateColumns();
-    this.buildStylesByGroup();
   }
 
   get innerWidth(): number {
@@ -157,12 +152,6 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
   _columnsByPin!: PinnedColumns[];
   _columns!: TableColumnInternal[];
   _innerWidth!: number;
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  _groupStyles: { [prop: string]: {} } = {
-    left: {},
-    center: {},
-    right: {}
-  };
 
   private _rowDiffer: KeyValueDiffer<keyof RowOrGroup<TRow>, any> = inject(KeyValueDiffers)
     .find({})
@@ -178,35 +167,6 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
     if (this._rowDiffer.diff(this.row)) {
       this.cd.markForCheck();
     }
-  }
-
-  buildStylesByGroup() {
-    this._groupStyles.left = this.calcStylesByGroup('left');
-    this._groupStyles.center = this.calcStylesByGroup('center');
-    this._groupStyles.right = this.calcStylesByGroup('right');
-    this.cd.markForCheck();
-  }
-
-  calcStylesByGroup(group: string) {
-    const styles = {} as any;
-
-    // #24653 use 'sticky' positioning to pin columns instead of transform
-    if (group === 'left') {
-      styles.position = 'sticky';
-      styles.top = 0;
-      styles.left = 0;
-      styles.zIndex = 9;
-      styles.transform = 'translateZ(0)';
-      translateXY(styles, 0, 0);
-    } else if (group === 'right') {
-      styles.position = 'sticky';
-      styles.top = 0;
-      styles.right = 0;
-
-      translateXY(styles, 0, 0);
-    }
-
-    return styles;
   }
 
   onActivate(event: CellActiveEvent<TRow>, index: number, groupIndex: number): void {
