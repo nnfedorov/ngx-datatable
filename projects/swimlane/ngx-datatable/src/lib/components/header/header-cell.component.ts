@@ -237,7 +237,7 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
     this.cellContext = {
       column: this.column,
       sortDir: this.sortDir,
-      sortFn: () => this.onSort(),
+      sortFn: e => this.onSort(e),
       allRowsSelected: this.allRowsSelected,
       selectFn: () => this.select.emit()
     };

@@ -49,7 +49,7 @@ export interface ActivateEvent<TRow> {
 export interface HeaderCellContext {
   column: TableColumn;
   sortDir: SortDirection | 'asc' | 'desc' | undefined;
-  sortFn: () => void;
+  sortFn: (e?: MouseEvent) => void;
   allRowsSelected?: boolean;
   selectFn: () => void;
 }
