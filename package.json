@@ -7,7 +7,7 @@
     "build": "ng build",
     "build:lib": "npm run build:lib:prod",
     "build:lib:prod": "ng build @swimlane/ngx-datatable --configuration production",
-    "copy-files": "cp docs/CHANGELOG.md dist/swimlane/ngx-datatable/CHANGELOG.md && cp README.md dist/swimlane/ngx-datatable/README.md && cp LICENSE dist/swimlane/ngx-datatable/LICENSE && cpx \"src/assets/**/*\" \"dist/swimlane/ngx-datatable/assets\" && cpx \"projects/swimlane/ngx-datatable/src/lib/themes/**/*\" \"dist/swimlane/ngx-datatable/themes\"",
+    "copy-files": "cpx docs/CHANGELOG.md dist/swimlane/ngx-datatable/CHANGELOG.md && cpx README.md dist/swimlane/ngx-datatable/README.md && cpx LICENSE dist/swimlane/ngx-datatable/LICENSE && cpx \"src/assets/**/*\" \"dist/swimlane/ngx-datatable/assets\" && cpx \"projects/swimlane/ngx-datatable/src/lib/themes/**/*\" \"dist/swimlane/ngx-datatable/themes\"",
     "build:css": "scss-bundle -c ./scss-bundle.config.json && sass --no-source-map dist/swimlane/ngx-datatable",
     "test": "yarn lint && yarn test:unit",
     "test:unit": "ng test @swimlane/ngx-datatable --watch=false",
