@@ -22,6 +22,7 @@ import { ActivateEvent, Row, RowOrGroup, TreeStatus } from '../../types/public.t
 import {
   CellActiveEvent,
   ColumnGroupWidth,
+  PinDirection,
   PinnedColumns,
   RowIndex,
   TableColumnInternal
@@ -32,8 +33,7 @@ import { DataTableBodyCellComponent } from './body-cell.component';
   selector: 'datatable-body-row',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @for (colGroup of _columnsByPin; track colGroup.type; let i = $index) { @if
-    (colGroup.columns.length) {
+    @for (colGroup of _columnsByPin; track colGroup.type) { @if (colGroup.columns.length) {
     <div
       class="datatable-row-{{ colGroup.type }} datatable-row-group"
       [style.width.px]="_columnGroupWidths[colGroup.type]"
@@ -53,7 +53,7 @@ import { DataTableBodyCellComponent } from './body-cell.component';
         [displayCheck]="displayCheck"
         [disabled]="disabled"
         [treeStatus]="treeStatus"
-        (activate)="onActivate($event, ii, i)"
+        (activate)="onActivate($event, ii, colGroup.type)"
         (treeAction)="onTreeAction()"
       >
       </datatable-body-cell>
@@ -169,8 +169,8 @@ export class DataTableBodyRowComponent<TRow extends Row = any> implements DoChec
     }
   }
 
-  onActivate(event: CellActiveEvent<TRow>, index: number, groupIndex: number): void {
-    this.activate.emit({ ...event, rowElement: this._element, cellIndex: index, groupIndex });
+  onActivate(event: CellActiveEvent<TRow>, index: number, groupType: PinDirection): void {
+    this.activate.emit({ ...event, rowElement: this._element, cellIndex: index, groupType });
   }
 
   @HostListener('keydown', ['$event'])

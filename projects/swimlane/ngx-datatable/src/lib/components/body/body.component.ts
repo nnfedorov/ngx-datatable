@@ -24,7 +24,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { DatatableGroupHeaderDirective } from './body-group-header.directive';
 import { DatatableRowDetailDirective } from '../row-detail/row-detail.directive';
 import { DataTableBodyRowComponent } from './body-row.component';
-import { ColumnGroupWidth, TableColumnInternal } from '../../types/internal.types';
+import { ColumnGroupWidth, PinDirection, TableColumnInternal } from '../../types/internal.types';
 import {
   ActivateEvent,
   DragEventData,
@@ -1027,7 +1027,7 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
       if (!model.cellElement || !isCellSelection) {
         this.focusRow(model.rowElement, key);
       } else if (isCellSelection && model.cellIndex !== undefined) {
-        this.focusCell(model.cellElement, model.rowElement, key, model.cellIndex, model.groupIndex);
+        this.focusCell(model.cellElement, model.rowElement, key, model.cellIndex, model.groupType);
       }
     }
   }
@@ -1063,7 +1063,7 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
     rowElement: HTMLElement,
     key: Keys,
     cellIndex: number,
-    groupIndex: number
+    groupType: PinDirection
   ): void {
     let nextCellElement: Element | null = null;
 
@@ -1084,7 +1084,8 @@ export class DataTableBodyComponent<TRow extends Row = any> implements OnInit, O
         // if (children.length) {
         //   nextCellElement = children[cellIndex];
         // }
-        nextCellElement = nextRowElement.children[groupIndex]?.children[cellIndex];
+        nextCellElement = nextRowElement.getElementsByClassName(`datatable-row-${groupType}`)[0]
+          ?.children[cellIndex];
       } else {
         this.focusRowRequested({ type: key === Keys.down ? 'next' : 'prev' });
       }

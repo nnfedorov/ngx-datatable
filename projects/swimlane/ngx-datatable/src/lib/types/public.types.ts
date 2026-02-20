@@ -1,4 +1,5 @@
 import { TableColumn, TableColumnProp } from './table-column.type';
+import { PinDirection } from './internal.types';
 
 export interface SortPropDir {
   dir: SortDirection | 'desc' | 'asc';
@@ -42,7 +43,7 @@ export interface ActivateEvent<TRow> {
   cellElement?: HTMLElement;
   treeStatus?: TreeStatus;
   cellIndex?: number;
-  groupIndex?: number;
+  groupType?: PinDirection;
   rowElement: HTMLElement;
 }
 
