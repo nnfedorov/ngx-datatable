@@ -213,9 +213,10 @@ export class DataTableHeaderCellComponent implements OnInit, OnDestroy {
     return this.column.width;
   }
 
-  @HostBinding('tabindex') get tabindex(): number {
-    return this.column.sortable ? 0 : -1;
-  }
+  // #30608 auto-scrolling into view on focus during navigation via 'tab' key breaks datatable layout
+  // @HostBinding('tabindex') get tabindex(): number {
+  //   return this.column.sortable ? 0 : -1;
+  // }
 
   get isCheckboxable(): boolean | undefined {
     return this.column.headerCheckboxable;
